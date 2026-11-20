@@ -195,6 +195,9 @@
   <!-- ==================== タップ・クリック・長押し 選択肢メニュー ==================== -->
   <div id="context-menu" class="no-print hidden fixed z-50 bg-slate-900/95 backdrop-blur border border-slate-600 rounded-xl shadow-2xl p-1.5 min-w-[168px] text-xs font-bold text-white space-y-1">
     <div id="ctx-menu-header" class="px-2.5 py-1 text-[10px] text-slate-400 border-b border-slate-800 truncate">要素の操作メニュー</div>
+    <button id="ctx-btn-edit-text" onclick="contextMenuEditText()" class="hidden w-full px-2.5 py-2 rounded-lg bg-emerald-900/60 hover:bg-emerald-700 text-emerald-100 text-left flex items-center gap-2">
+      <span>✏️</span><span>文字を編集する</span>
+    </button>
     <button onclick="contextMenuDuplicate()" class="w-full px-2.5 py-2 rounded-lg hover:bg-slate-800 active:bg-slate-700 text-left flex items-center gap-2">
       <span>📋</span><span>複製する</span>
     </button>
@@ -515,7 +518,7 @@
   <!-- トースト通知 -->
   <div id="toast" class="no-print hidden fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-900/95 border border-emerald-500/60 text-white text-xs font-bold px-4 py-2 rounded-full shadow-2xl z-50 whitespace-nowrap"></div>
 
-  <!-- 線・矢印ドラッグ中のリアルタイム長さ・角度HUD -->
+  <!-- 線・矢印・文字ドラッグ中のリアルタイム数値HUD -->
   <div id="line-drag-hud" class="no-print hidden fixed pointer-events-none z-50 bg-slate-900/95 border border-amber-400/80 text-amber-200 font-mono text-[11px] font-extrabold px-2.5 py-1 rounded-lg shadow-xl whitespace-nowrap"></div>
 
   <script>
@@ -685,14 +688,12 @@
       { id: 'soil',     label: '⛰️ 土・盛土' }
     ];
 
-    // 拡充済み現場・工程・天気・確認スタンプ（30種）
     const FIELD_ICON_STAMPS = [
       '✅', '⭕', '❌', '⚠️', '🚧', '🪢', '🔺', '📍', '📷', '🔨',
       '⭐', '🔄', '📐', '📏', '🧭', '🔍', '📌', '🚩', '🏗️', '🚜',
       '⚡', '💧', '🔥', '🦺', '☀️', '☁️', '🌧️', '👍', '❗', '💡'
     ];
 
-    // テーマ別ノート初期プリセット
     const NOTEBOOK_THEMES = {
       yaecho: {
         icon: '📓',
@@ -1025,6 +1026,7 @@
       selectedRow: 1,
       selectedCol: 1,
       selectedObjId: null,
+      editingTextObjId: null,
       editingCell: null,
       zoom: 1.0
     };
@@ -1213,6 +1215,7 @@
       appState.notebooks.push(newNb);
       appState.currentNotebookIndex = appState.notebooks.length - 1;
       uiState.selectedObjId = null;
+      uiState.editingTextObjId = null;
       uiState.editingCell = null;
       uiState.selectedTableId = null;
       if (nameInp) nameInp.value = '';
@@ -1226,6 +1229,7 @@
       if (idx < 0 || idx >= appState.notebooks.length) return;
       appState.currentNotebookIndex = idx;
       uiState.selectedObjId = null;
+      uiState.editingTextObjId = null;
       uiState.editingCell = null;
       uiState.selectedTableId = getCurrentPage().tables[0]?.id || null;
       saveProjectToLocal();
@@ -1273,6 +1277,7 @@
         appState.currentNotebookIndex = appState.notebooks.length - 1;
       }
       uiState.selectedObjId = null;
+      uiState.editingTextObjId = null;
       uiState.editingCell = null;
       uiState.selectedTableId = getCurrentPage().tables[0]?.id || null;
       saveProjectToLocal();
@@ -1288,6 +1293,7 @@
       if (next < 0 || next >= nb.pages.length) return;
       nb.currentPageIndex = next;
       uiState.selectedObjId = null;
+      uiState.editingTextObjId = null;
       uiState.editingCell = null;
       uiState.selectedTableId = getCurrentPage().tables[0]?.id || null;
       saveProjectToLocal();
@@ -1313,6 +1319,7 @@
       nb.pages.push(newPage);
       nb.currentPageIndex = nb.pages.length - 1;
       uiState.selectedObjId = null;
+      uiState.editingTextObjId = null;
       uiState.editingCell = null;
       uiState.selectedTableId = newPage.tables[0]?.id || null;
       saveProjectToLocal();
@@ -1350,6 +1357,7 @@
       if (idx < 0 || idx >= nb.pages.length) return;
       nb.currentPageIndex = idx;
       uiState.selectedObjId = null;
+      uiState.editingTextObjId = null;
       uiState.editingCell = null;
       uiState.selectedTableId = getCurrentPage().tables[0]?.id || null;
       closeModal('modal-pages');
@@ -1421,6 +1429,7 @@
       nb.pages.splice(delIdx, 1);
       nb.currentPageIndex = Math.max(0, nb.currentPageIndex - 1);
       uiState.selectedObjId = null;
+      uiState.editingTextObjId = null;
       uiState.editingCell = null;
       uiState.selectedTableId = getCurrentPage().tables[0]?.id || null;
       closeModal('modal-delete-page');
@@ -1949,6 +1958,7 @@
       uiState.selectedRow = r;
       uiState.selectedCol = c;
       uiState.selectedObjId = null;
+      uiState.editingTextObjId = null;
       uiState.editingCell = isEditing ? { tableId, r, c } : null;
 
       if (hadSelectedObj) {
@@ -2285,6 +2295,7 @@
       }
       p.objects.push(obj);
       uiState.selectedObjId = id;
+      uiState.editingTextObjId = null;
       saveProjectToLocal();
       renderAll();
     }
@@ -2311,6 +2322,7 @@
       };
       p.objects.push(obj);
       uiState.selectedObjId = id;
+      uiState.editingTextObjId = null;
       saveProjectToLocal();
       renderAll();
       showToast('日時自動更新スタンプを配置しました');
@@ -2330,6 +2342,7 @@
       };
       p.objects.push(obj);
       uiState.selectedObjId = id;
+      uiState.editingTextObjId = null;
       saveProjectToLocal();
       renderAll();
     }
@@ -2351,6 +2364,7 @@
       };
       p.objects.push(obj);
       uiState.selectedObjId = id;
+      uiState.editingTextObjId = null;
       saveProjectToLocal();
       renderAll();
     }
@@ -2400,43 +2414,64 @@
         text: '要確認メモ',
         x: 110,
         y: 120,
-        w: 140,
-        h: 34,
-        fontSize: 15,
+        fontSize: 16,
+        customWidth: null,
         color: '#dc2626',
         boxStyle: 'solid-border',
         bgWhite: true
       });
       uiState.selectedObjId = id;
+      uiState.editingTextObjId = null;
       saveProjectToLocal();
       renderAll();
+      showToast('移動文字を配置しました（四隅ハンドルで拡大縮小・再タップで文字編集）');
     }
 
-    function selectTextObjectForEdit(objId) {
+    function enterTextObjectEditMode(objId) {
       hideContextMenu();
-      const changed = uiState.selectedObjId !== objId;
       uiState.selectedObjId = objId;
+      uiState.editingTextObjId = objId;
       uiState.editingCell = null;
-      if (changed) {
-        document.querySelectorAll('[data-obj-id]').forEach(el => {
-          const isTarget = el.dataset.objId === objId;
-          el.classList.toggle('ring-2', isTarget);
-          el.classList.toggle('ring-blue-500', isTarget);
-          el.classList.toggle('ring-offset-1', isTarget);
-        });
-        updateTableSelectionVisuals();
-      }
+      renderSheetLayout();
       renderDrawer();
+      requestAnimationFrame(() => {
+        const spanEl = document.querySelector(`[data-text-span="${objId}"]`);
+        if (spanEl) {
+          spanEl.focus();
+          try {
+            const range = document.createRange();
+            range.selectNodeContents(spanEl);
+            range.collapse(false);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+          } catch (_) {}
+        }
+      });
     }
 
     function adjustSelectedTextSize(delta) {
       const obj = getSelectedObject();
       if (!obj || obj.type !== 'text') return;
-      const nextSize = Math.min(42, Math.max(10, (Number(obj.fontSize) || 15) + delta));
+      const oldSize = Number(obj.fontSize) || 16;
+      const nextSize = Math.min(72, Math.max(10, oldSize + delta));
+      if (obj.customWidth) {
+        obj.customWidth = Math.max(48, Math.round(obj.customWidth * (nextSize / oldSize)));
+      }
       obj.fontSize = nextSize;
       saveProjectToLocal();
       renderSheetLayout();
       renderDrawer();
+    }
+
+    function resetSelectedTextWidth() {
+      const obj = getSelectedObject();
+      if (!obj || obj.type !== 'text') return;
+      obj.customWidth = null;
+      saveProjectToLocal();
+      renderSheetLayout();
+      renderDrawer();
+      showToast('移動文字の横幅を自動フィットに戻しました');
     }
 
     function updateSelectedObjProp(prop, val) {
@@ -2471,6 +2506,7 @@
       if (!uiState.selectedObjId) return;
       p.objects = p.objects.filter(o => o.id !== uiState.selectedObjId);
       uiState.selectedObjId = null;
+      uiState.editingTextObjId = null;
       saveProjectToLocal();
       renderAll();
       showToast('選択要素を削除しました');
@@ -2603,6 +2639,7 @@
             cropLeft: 0
           });
           uiState.selectedObjId = id;
+          uiState.editingTextObjId = null;
           saveProjectToLocal();
           renderAll();
           showToast(`PDF「${file.name}」(${pdfDoc.numPages}頁)を貼り付けました`);
@@ -2636,6 +2673,7 @@
             cropLeft: 0
           });
           uiState.selectedObjId = id;
+          uiState.editingTextObjId = null;
           saveProjectToLocal();
           renderAll();
           showToast(`画像「${file.name}」を貼り付けました`);
@@ -2656,17 +2694,22 @@
       ctxTargetId = targetId;
       const menu = document.getElementById('context-menu');
       const hdr = document.getElementById('ctx-menu-header');
+      const btnEditText = document.getElementById('ctx-btn-edit-text');
       const btnFront = document.getElementById('ctx-btn-front');
       const btnBack = document.getElementById('ctx-btn-back');
       if (!menu) return;
 
-      if (hdr) hdr.textContent = kind === 'table' ? '表の操作メニュー' : '要素の操作メニュー';
+      const targetObj = kind === 'object' ? getCurrentPage().objects.find(o => o.id === targetId) : null;
+      const isText = targetObj && targetObj.type === 'text';
+
+      if (hdr) hdr.textContent = kind === 'table' ? '表の操作メニュー' : (isText ? '移動文字の操作（再タップで文字編集）' : '要素の操作メニュー');
+      if (btnEditText) btnEditText.classList.toggle('hidden', !isText);
       if (btnFront) btnFront.classList.toggle('hidden', kind === 'table');
       if (btnBack) btnBack.classList.toggle('hidden', kind === 'table');
 
       menu.classList.remove('hidden');
-      const mw = 175;
-      const mh = 185;
+      const mw = 190;
+      const mh = isText ? 225 : 185;
       const left = Math.min(window.innerWidth - mw - 10, Math.max(10, clientX + 6));
       const top = Math.min(window.innerHeight - mh - 10, Math.max(10, clientY + 6));
       menu.style.left = `${left}px`;
@@ -2678,6 +2721,14 @@
       if (menu) menu.classList.add('hidden');
       ctxTargetKind = null;
       ctxTargetId = null;
+    }
+
+    function contextMenuEditText() {
+      const targetId = ctxTargetId;
+      hideContextMenu();
+      if (targetId) {
+        enterTextObjectEditMode(targetId);
+      }
     }
 
     function contextMenuDuplicate() {
@@ -2766,6 +2817,60 @@
     document.addEventListener('pointerdown', e => {
       if (e.target.closest('#context-menu')) return;
 
+      // 移動文字の四隅拡大・縮小ハンドル
+      const textScaleHandle = e.target.closest('[data-text-scale-handle]');
+      if (textScaleHandle) {
+        e.preventDefault();
+        e.stopPropagation();
+        hideContextMenu();
+        const objId = textScaleHandle.dataset.objId;
+        const corner = textScaleHandle.dataset.textScaleHandle;
+        const obj = getCurrentPage().objects.find(o => o.id === objId);
+        if (!obj) return;
+        const domEl = document.querySelector(`[data-obj-id="${objId}"]`);
+        const rectW = domEl ? domEl.offsetWidth : (obj.customWidth || 120);
+        const rectH = domEl ? domEl.offsetHeight : 36;
+        activeDragState = {
+          kind: 'scale-text',
+          objId,
+          domEl,
+          corner,
+          startX: e.clientX,
+          startY: e.clientY,
+          origX: obj.x || 0,
+          origY: obj.y || 0,
+          origFontSize: Number(obj.fontSize) || 16,
+          origCustomWidth: obj.customWidth || null,
+          origRectW: Math.max(40, rectW),
+          origRectH: Math.max(24, rectH)
+        };
+        return;
+      }
+
+      // 移動文字の左右折り返し幅調整ハンドル
+      const textWidthHandle = e.target.closest('[data-text-width-handle]');
+      if (textWidthHandle) {
+        e.preventDefault();
+        e.stopPropagation();
+        hideContextMenu();
+        const objId = textWidthHandle.dataset.objId;
+        const side = textWidthHandle.dataset.textWidthHandle;
+        const obj = getCurrentPage().objects.find(o => o.id === objId);
+        if (!obj) return;
+        const domEl = document.querySelector(`[data-obj-id="${objId}"]`);
+        const rectW = domEl ? domEl.offsetWidth : (obj.customWidth || 140);
+        activeDragState = {
+          kind: 'width-text',
+          objId,
+          domEl,
+          side,
+          startX: e.clientX,
+          origX: obj.x || 0,
+          origRectW: Math.max(48, rectW)
+        };
+        return;
+      }
+
       const resizeHandle = e.target.closest('[data-resize-handle]');
       if (resizeHandle) {
         e.preventDefault();
@@ -2836,6 +2941,7 @@
         }
         uiState.selectedTableId = tblId;
         uiState.selectedObjId = null;
+        uiState.editingTextObjId = null;
         uiState.editingCell = null;
         renderSheetLayout();
         renderDrawer();
@@ -2870,8 +2976,10 @@
         const obj = p.objects.find(o => o.id === objId);
         if (!obj) return;
 
-        if (uiState.selectedObjId !== objId) {
+        const wasAlreadySelected = uiState.selectedObjId === objId;
+        if (!wasAlreadySelected) {
           uiState.selectedObjId = objId;
+          uiState.editingTextObjId = null;
           uiState.editingCell = null;
           renderSheetLayout();
           renderDrawer();
@@ -2883,6 +2991,7 @@
           kind: 'move-object',
           objId,
           domEl: freshEl,
+          wasAlreadySelected,
           startX: e.clientX,
           startY: e.clientY,
           origX: obj.x || 0,
@@ -2943,6 +3052,67 @@
         if (activeDragState.domEl) {
           activeDragState.domEl.style.left = `${tbl.x}px`;
           activeDragState.domEl.style.top = `${tbl.y}px`;
+        }
+      } else if (activeDragState.kind === 'scale-text') {
+        const obj = p.objects.find(o => o.id === activeDragState.objId);
+        if (!obj) return;
+        const c = activeDragState.corner;
+        const signedDx = c.includes('e') ? dx : -dx;
+        const signedDy = c.includes('s') ? dy : -dy;
+        const delta = Math.abs(signedDx) >= Math.abs(signedDy) ? signedDx : signedDy;
+        const ratio = Math.max(0.4, Math.min(4.5, (activeDragState.origRectW + delta) / activeDragState.origRectW));
+        const nextSize = Math.min(72, Math.max(10, Math.round(activeDragState.origFontSize * ratio)));
+        const appliedRatio = nextSize / activeDragState.origFontSize;
+
+        obj.fontSize = nextSize;
+        if (activeDragState.origCustomWidth) {
+          obj.customWidth = Math.max(48, Math.round(activeDragState.origCustomWidth * appliedRatio));
+        }
+        if (c.includes('w')) {
+          const newW = activeDragState.origRectW * appliedRatio;
+          obj.x = Math.round(activeDragState.origX + (activeDragState.origRectW - newW));
+        }
+        if (c.includes('n')) {
+          const newH = activeDragState.origRectH * appliedRatio;
+          obj.y = Math.round(activeDragState.origY + (activeDragState.origRectH - newH));
+        }
+
+        if (activeDragState.domEl) {
+          activeDragState.domEl.style.left = `${obj.x}px`;
+          activeDragState.domEl.style.top = `${obj.y}px`;
+          activeDragState.domEl.style.fontSize = `${nextSize}px`;
+          if (obj.customWidth) {
+            activeDragState.domEl.style.width = `${obj.customWidth}px`;
+          }
+        }
+
+        const hud = document.getElementById('line-drag-hud');
+        if (hud) {
+          hud.textContent = `文字サイズ: ${nextSize}px（${Math.round(appliedRatio * 100)}%）`;
+          hud.style.left = `${Math.min(window.innerWidth - 175, e.clientX + 14)}px`;
+          hud.style.top = `${Math.max(12, e.clientY - 34)}px`;
+          hud.classList.remove('hidden');
+        }
+      } else if (activeDragState.kind === 'width-text') {
+        const obj = p.objects.find(o => o.id === activeDragState.objId);
+        if (!obj) return;
+        const isLeft = activeDragState.side === 'w';
+        const deltaW = isLeft ? -dx : dx;
+        const nextW = Math.min(720, Math.max(48, Math.round(activeDragState.origRectW + deltaW)));
+        obj.customWidth = nextW;
+        if (isLeft) {
+          obj.x = Math.round(activeDragState.origX + (activeDragState.origRectW - nextW));
+        }
+        if (activeDragState.domEl) {
+          activeDragState.domEl.style.left = `${obj.x}px`;
+          activeDragState.domEl.style.width = `${nextW}px`;
+        }
+        const hud = document.getElementById('line-drag-hud');
+        if (hud) {
+          hud.textContent = `枠幅: ${nextW}px`;
+          hud.style.left = `${Math.min(window.innerWidth - 140, e.clientX + 14)}px`;
+          hud.style.top = `${Math.max(12, e.clientY - 34)}px`;
+          hud.classList.remove('hidden');
         }
       } else if (activeDragState.kind === 'resize-obj') {
         const obj = p.objects.find(o => o.id === activeDragState.objId);
@@ -3027,10 +3197,17 @@
       activeDragState = null;
 
       if (!st.moved && st.kind === 'move-object') {
-        showContextMenuAt(e.clientX, e.clientY, 'object', st.objId);
+        const obj = getCurrentPage().objects.find(o => o.id === st.objId);
+        if (obj && obj.type === 'text' && st.wasAlreadySelected) {
+          enterTextObjectEditMode(st.objId);
+        } else {
+          showContextMenuAt(e.clientX, e.clientY, 'object', st.objId);
+        }
       } else {
         saveProjectToLocal();
-        if ((st.kind === 'resize-obj' || st.kind === 'line-end') && uiState.activeTab === 'draw') {
+        if (['scale-text', 'width-text'].includes(st.kind)) {
+          renderDrawer();
+        } else if ((st.kind === 'resize-obj' || st.kind === 'line-end') && uiState.activeTab === 'draw') {
           renderDrawer();
         }
       }
@@ -3289,6 +3466,10 @@
       `;
     }
 
+    function buildTextResizeHandlesHtml(objId) {
+      return `<div data-text-scale-handle="nw" data-obj-id="${objId}" class="no-print touch-none absolute -top-2.5 -left-2.5 w-5 h-5 rounded-full bg-blue-600 border-2 border-white shadow-md cursor-nwse-resize z-40" title="角をドラッグして文字と枠を拡大・縮小"></div><div data-text-scale-handle="ne" data-obj-id="${objId}" class="no-print touch-none absolute -top-2.5 -right-2.5 w-5 h-5 rounded-full bg-blue-600 border-2 border-white shadow-md cursor-nesw-resize z-40" title="角をドラッグして文字と枠を拡大・縮小"></div><div data-text-scale-handle="sw" data-obj-id="${objId}" class="no-print touch-none absolute -bottom-2.5 -left-2.5 w-5 h-5 rounded-full bg-blue-600 border-2 border-white shadow-md cursor-nesw-resize z-40" title="角をドラッグして文字と枠を拡大・縮小"></div><div data-text-scale-handle="se" data-obj-id="${objId}" class="no-print touch-none absolute -bottom-2.5 -right-2.5 w-5 h-5 rounded-full bg-blue-600 border-2 border-white shadow-md cursor-nwse-resize z-40" title="角をドラッグして文字と枠を拡大・縮小"></div><div data-text-width-handle="w" data-obj-id="${objId}" class="no-print touch-none absolute top-1/2 -left-2 -translate-y-1/2 w-3 h-5 rounded-xs bg-amber-400 border border-slate-900 shadow cursor-ew-resize z-40" title="左右ドラッグで折り返し幅を調整"></div><div data-text-width-handle="e" data-obj-id="${objId}" class="no-print touch-none absolute top-1/2 -right-2 -translate-y-1/2 w-3 h-5 rounded-xs bg-amber-400 border border-slate-900 shadow cursor-ew-resize z-40" title="左右ドラッグで折り返し幅を調整"></div>`;
+    }
+
     function buildArrowHeadSvg(type, x, y, angleRad, color, sw) {
       if (!type || type === 'none') return '';
       const deg = (angleRad * 180) / Math.PI;
@@ -3418,9 +3599,10 @@
         const fw = obj.bold === false ? '500' : '800';
         const td = obj.doubleUnderline ? 'underline double' : (obj.underline ? 'underline' : 'none');
         const boxStyle = obj.boxStyle || (obj.bgWhite === false ? 'none' : 'card');
+        const isEditingText = isSel && uiState.editingTextObjId === obj.id;
 
         let boxCss = '';
-        let boxExtraCls = 'px-2 py-0.5 rounded';
+        let boxExtraCls = 'px-2.5 py-1 rounded';
         let textCol = col;
         let tailHtml = '';
 
@@ -3429,48 +3611,40 @@
           boxExtraCls = 'px-1 py-0.5';
         } else if (boxStyle === 'card') {
           boxCss = 'background:rgba(255,255,255,0.96); border:1px solid #cbd5e1;';
-          boxExtraCls = 'px-2 py-0.5 rounded shadow-xs';
+          boxExtraCls = 'px-2.5 py-1 rounded shadow-xs';
         } else if (boxStyle === 'solid-border') {
           boxCss = `background:rgba(255,255,255,0.97); border:2px solid ${col};`;
-          boxExtraCls = 'px-2.5 py-0.5 rounded-md shadow-xs';
+          boxExtraCls = 'px-2.5 py-1 rounded-md shadow-xs';
         } else if (boxStyle === 'double-border') {
           boxCss = `background:rgba(255,255,255,0.97); border:4px double ${col};`;
-          boxExtraCls = 'px-2.5 py-0.5 rounded-xs shadow-xs';
+          boxExtraCls = 'px-2.5 py-1 rounded-xs shadow-xs';
         } else if (boxStyle === 'dashed-border') {
           boxCss = `background:rgba(255,255,255,0.96); border:2px dashed ${col};`;
-          boxExtraCls = 'px-2.5 py-0.5 rounded-md shadow-xs';
+          boxExtraCls = 'px-2.5 py-1 rounded-md shadow-xs';
         } else if (boxStyle === 'pill') {
-          boxCss = `background:rgba(255,255,255,0.97); border:2px solid ${col}; border-radius:18px;`;
-          boxExtraCls = 'px-3.5 py-0.5 shadow-xs';
+          boxCss = `background:rgba(255,255,255,0.97); border:2px solid ${col}; border-radius:22px;`;
+          boxExtraCls = 'px-3.5 py-1 shadow-xs';
         } else if (boxStyle === 'callout') {
           boxCss = `background:rgba(255,255,255,0.98); border:2px solid ${col}; border-radius:8px;`;
           boxExtraCls = 'px-2.5 py-1 shadow-xs';
           tailHtml = `<svg class="pointer-events-none absolute -bottom-[8px] left-3 w-3.5 h-2 overflow-visible" viewBox="0 0 14 8"><polygon points="0,0 14,0 5,8" fill="#ffffff"/><polyline points="0,0 5,8 14,0" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round"/></svg>`;
         } else if (boxStyle === 'badge-fill') {
           boxCss = `background:${col}; border:2px solid ${col}; border-radius:6px;`;
-          boxExtraCls = 'px-2.5 py-0.5 shadow-sm';
+          boxExtraCls = 'px-2.5 py-1 shadow-sm';
           textCol = '#ffffff';
         } else if (boxStyle === 'sticky-tint') {
           boxCss = `background:linear-gradient(0deg, ${hexToRgba(col, 0.14)}, ${hexToRgba(col, 0.14)}), #ffffff; border:1px solid ${hexToRgba(col, 0.45)}; border-left:5px solid ${col}; border-radius:0 6px 6px 0;`;
-          boxExtraCls = 'px-2.5 py-0.5 shadow-xs';
+          boxExtraCls = 'px-2.5 py-1 shadow-xs';
         }
 
+        const widthCss = obj.customWidth ? `width:${obj.customWidth}px;` : 'max-width:92%;';
         const formattedTextHtml = escapeHtml(obj.text || 'メモ').replace(/\n/g, '<br>');
+        const spanHtml = isEditingText
+          ? `<span data-text-span="${obj.id}" contenteditable="true" onpointerdown="event.stopPropagation();" onkeydown="event.stopPropagation();" oninput="const o=getCurrentPage().objects.find(x=>x.id==='${obj.id}'); if(o){o.text=this.innerText.replace(/\\r\\n/g,'\\n'); saveProjectToLocal();}" onblur="const o=getCurrentPage().objects.find(x=>x.id==='${obj.id}'); if(o){o.text=this.innerText.replace(/\\r\\n/g,'\\n');} uiState.editingTextObjId=null; saveProjectToLocal(); renderSheetLayout(); renderDrawer();" class="outline-none select-text block w-full min-w-[24px] whitespace-pre-wrap break-words cursor-text">${formattedTextHtml}</span>`
+          : `<span data-text-span="${obj.id}" class="pointer-events-none block w-full min-w-[24px] whitespace-pre-wrap break-words">${formattedTextHtml}</span>`;
+        const handlesHtml = isSel ? buildTextResizeHandlesHtml(obj.id) : '';
 
-        return `
-          <div data-drag-kind="object" data-drag-id="${obj.id}" data-obj-id="${obj.id}"
-               style="left:${obj.x}px; top:${obj.y}px; color:${textCol}; font-size:${obj.fontSize || 15}px; font-weight:${fw}; text-decoration:${td}; ${boxCss}"
-               class="touch-none absolute z-30 cursor-move whitespace-pre-wrap leading-snug max-w-[90%] ${boxExtraCls} ${selRing}">
-            <span contenteditable="true"
-                  onpointerdown="event.stopPropagation(); selectTextObjectForEdit('${obj.id}');"
-                  onfocus="selectTextObjectForEdit('${obj.id}');"
-                  onkeydown="event.stopPropagation();"
-                  oninput="const o=getCurrentPage().objects.find(x=>x.id==='${obj.id}'); if(o){o.text=this.innerText.replace(/\\r\\n/g,'\\n'); saveProjectToLocal();}"
-                  onblur="const o=getCurrentPage().objects.find(x=>x.id==='${obj.id}'); if(o){o.text=this.innerText.replace(/\\r\\n/g,'\\n'); saveProjectToLocal();}"
-                  class="outline-none select-text inline-block min-w-[24px] whitespace-pre-wrap">${formattedTextHtml}</span>
-            ${tailHtml}
-          </div>
-        `;
+        return `<div data-drag-kind="object" data-drag-id="${obj.id}" data-obj-id="${obj.id}" ondblclick="event.stopPropagation(); enterTextObjectEditMode('${obj.id}');" style="left:${obj.x}px; top:${obj.y}px; ${widthCss} color:${textCol}; font-size:${obj.fontSize || 16}px; font-weight:${fw}; text-decoration:${td}; ${boxCss}" class="touch-none absolute z-30 ${isEditingText ? 'cursor-text ring-2 ring-emerald-400' : 'cursor-move'} leading-snug ${boxExtraCls} ${selRing}">${spanHtml}${tailHtml}${handlesHtml}</div>`;
       }
 
       if (obj.type === 'image' || obj.type === 'pdf') {
@@ -3768,7 +3942,7 @@
              onkeyup="captureMemoSelection(); syncMemoFromDom();"
              onmouseup="captureMemoSelection();"
              onblur="syncMemoFromDom();"
-             onclick="event.stopPropagation(); hideContextMenu(); if(uiState.selectedObjId || uiState.editingCell){ uiState.selectedObjId=null; uiState.editingCell=null; renderSheetLayout(); renderDrawer(); }"
+             onclick="event.stopPropagation(); hideContextMenu(); if(uiState.selectedObjId || uiState.editingCell || uiState.editingTextObjId){ uiState.selectedObjId=null; uiState.editingTextObjId=null; uiState.editingCell=null; renderSheetLayout(); renderDrawer(); }"
              style="${memoStyle}"
              class="w-full h-full min-h-[180px] outline-none leading-7 select-text z-10">${p.memo.html}</div>
       `;
@@ -3849,6 +4023,9 @@
             <button onclick="insertBulletItem('dot')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-bold">・中黒</button>
             <button onclick="insertBulletItem('star')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-bold">★印</button>
             <button onclick="addFloatingTextObject()" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-600 rounded-lg font-bold">T+ 移動文字</button>
+            ${isTextObj ? `
+              <button onclick="enterTextObjectEditMode('${selObj.id}')" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 rounded-lg font-extrabold text-white shadow-xs">✏️ 文字編集</button>
+            ` : ''}
             <span class="text-slate-700">|</span>
             <span class="${isTextObj ? 'text-amber-300' : 'text-slate-400'} font-bold text-[10px]">${isTextObj ? '移動文字色:' : '文字装飾:'}</span>
             ${['#0f172a', '#dc2626', '#2563eb', '#059669', '#d97706', '#7c3aed'].map(c => `
@@ -3877,11 +4054,12 @@
                 })()}
               </select>
               <div class="inline-flex items-center gap-1 bg-slate-900 px-1.5 py-0.5 rounded-lg border border-slate-700">
-                <span class="text-[10px] text-amber-200 font-bold">サイズ(${selObj.fontSize || 15}px):</span>
+                <span class="text-[10px] text-amber-200 font-bold">拡大縮小(${selObj.fontSize || 16}px):</span>
                 <button onclick="adjustSelectedTextSize(-2)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded font-extrabold">-</button>
-                <input type="range" min="10" max="42" value="${selObj.fontSize || 15}" oninput="updateSelectedObjProp('fontSize', Number(this.value))" class="w-16 accent-amber-400" />
+                <input type="range" min="10" max="72" value="${selObj.fontSize || 16}" oninput="updateSelectedObjProp('fontSize', Number(this.value))" class="w-16 accent-amber-400" />
                 <button onclick="adjustSelectedTextSize(2)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded font-extrabold">+</button>
               </div>
+              ${selObj.customWidth ? `<button onclick="resetSelectedTextWidth()" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-[10px] font-bold">幅自動</button>` : ''}
             ` : ''}
             ${selObj ? `
               <span class="text-slate-700">|</span>
@@ -4259,7 +4437,7 @@
           const curBs = obj.boxStyle || (obj.bgWhite === false ? 'none' : 'card');
           detailBar = `
             <div class="flex flex-wrap items-center gap-1.5 bg-slate-900 p-1.5 rounded-lg border border-slate-800">
-              <span class="text-amber-300 font-bold">T 移動文字:</span>
+              <button onclick="enterTextObjectEditMode('${obj.id}')" class="px-2 py-0.5 bg-amber-600 hover:bg-amber-500 rounded font-extrabold text-white">✏️ 編集</button>
               <select onchange="updateSelectedObjProp('boxStyle', this.value)" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 font-bold text-amber-200" title="移動文字の囲いスタイル">
                 <option value="none" ${curBs === 'none' ? 'selected' : ''}>囲い: なし</option>
                 <option value="card" ${curBs === 'card' ? 'selected' : ''}>① 白枠カード</option>
@@ -4276,8 +4454,9 @@
               `).join('')}
               <input type="color" value="${obj.color || '#dc2626'}" oninput="updateSelectedObjProp('color', this.value)" onchange="updateSelectedObjProp('color', this.value)" class="w-5 h-5 bg-transparent border-0"/>
               <button onclick="adjustSelectedTextSize(-2)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded font-extrabold">A-</button>
-              <span class="text-[10px] text-amber-200 font-mono">${obj.fontSize || 15}px</span>
+              <span class="text-[10px] text-amber-200 font-mono">${obj.fontSize || 16}px</span>
               <button onclick="adjustSelectedTextSize(2)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded font-extrabold">A+</button>
+              ${obj.customWidth ? `<button onclick="resetSelectedTextWidth()" class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-[10px]">幅自動</button>` : ''}
               <button onclick="deleteSelectedObject()" class="px-2 py-0.5 bg-rose-800 rounded font-bold">🗑️削除</button>
             </div>
           `;
@@ -4454,6 +4633,7 @@
         nb.pages[nb.currentPageIndex] = newPageData;
       }
       uiState.selectedObjId = null;
+      uiState.editingTextObjId = null;
       uiState.editingCell = null;
       uiState.selectedTableId = newPageData.tables[0]?.id || null;
       saveProjectToLocal();
@@ -5155,6 +5335,49 @@
     }
 
     // ==================== 高解像度 2x Canvas PNG合成 ====================
+    function wrapCanvasTextLines(ctx, textStr, maxInnerWidth) {
+      const rawLines = String(textStr || '').split('\n');
+      if (!maxInnerWidth || maxInnerWidth <= 12) return rawLines;
+      const wrapped = [];
+      for (const rawLine of rawLines) {
+        if (rawLine === '') {
+          wrapped.push('');
+          continue;
+        }
+        let current = '';
+        for (const ch of rawLine) {
+          const candidate = current + ch;
+          if (current !== '' && ctx.measureText(candidate).width > maxInnerWidth) {
+            wrapped.push(current);
+            current = ch;
+          } else {
+            current = candidate;
+          }
+        }
+        if (current !== '') wrapped.push(current);
+      }
+      return wrapped.length > 0 ? wrapped : [''];
+    }
+
+    function drawRoundedBoxPath(ctx, x, y, w, h, r) {
+      const radius = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(x, y, w, h, radius);
+      } else {
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + w - radius, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+        ctx.lineTo(x + w, y + h - radius);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+        ctx.lineTo(x + radius, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+      }
+    }
+
     async function renderPageObjectToCanvas(pageObj) {
       const p = pageObj || getCurrentPage();
       const dim = getSheetDimensions(p);
@@ -5635,33 +5858,37 @@
           ctx.fillText(obj.text || '済', obj.x + w / 2, obj.y + h / 2);
           ctx.restore();
         } else if (obj.type === 'text') {
-          const fSize = obj.fontSize || 15;
-          const fWeight = obj.bold === false ? '500' : 'bold';
+          const fSize = obj.fontSize || 16;
+          const fWeight = obj.bold === false ? '500' : '800';
           const txtStr = String(obj.text || '');
           const boxStyle = obj.boxStyle || (obj.bgWhite === false ? 'none' : 'card');
           ctx.save();
           ctx.font = `${fWeight} ${fSize}px sans-serif`;
           if (txtStr) {
-            const textLines = txtStr.split('\n');
+            const padX = boxStyle === 'pill' ? 14 : (boxStyle === 'none' ? 4 : 10);
+            const padY = boxStyle === 'none' ? 2 : 4;
+            const maxWrapW = obj.customWidth ? Math.max(24, obj.customWidth - padX * 2) : Math.max(120, dim.pxW * 0.9 - padX * 2);
+            const textLines = wrapCanvasTextLines(ctx, txtStr, maxWrapW);
             const maxTextW = Math.max(...textLines.map(ln => ctx.measureText(ln).width), 24);
-            const lineHeight = Math.round(fSize * 1.35);
-            const padX = boxStyle === 'pill' ? 14 : 9;
-            const boxW = maxTextW + padX * 2;
-            const boxH = textLines.length * lineHeight + 8;
+            const lineHeight = Math.round(fSize * 1.38);
+            const boxW = obj.customWidth ? obj.customWidth : (maxTextW + padX * 2);
+            const boxH = textLines.length * lineHeight + padY * 2;
             let drawTextCol = col;
 
             if (boxStyle === 'card') {
               ctx.fillStyle = 'rgba(255,255,255,0.96)';
-              ctx.fillRect(obj.x, obj.y, boxW, boxH);
+              drawRoundedBoxPath(ctx, obj.x, obj.y, boxW, boxH, 4);
+              ctx.fill();
               ctx.strokeStyle = '#cbd5e1';
               ctx.lineWidth = 1;
-              ctx.strokeRect(obj.x, obj.y, boxW, boxH);
+              ctx.stroke();
             } else if (boxStyle === 'solid-border') {
               ctx.fillStyle = 'rgba(255,255,255,0.97)';
-              ctx.fillRect(obj.x, obj.y, boxW, boxH);
+              drawRoundedBoxPath(ctx, obj.x, obj.y, boxW, boxH, 6);
+              ctx.fill();
               ctx.strokeStyle = col;
               ctx.lineWidth = 2;
-              ctx.strokeRect(obj.x, obj.y, boxW, boxH);
+              ctx.stroke();
             } else if (boxStyle === 'double-border') {
               ctx.fillStyle = 'rgba(255,255,255,0.97)';
               ctx.fillRect(obj.x, obj.y, boxW, boxH);
@@ -5671,18 +5898,17 @@
               ctx.strokeRect(obj.x + 3, obj.y + 3, Math.max(2, boxW - 6), Math.max(2, boxH - 6));
             } else if (boxStyle === 'dashed-border') {
               ctx.fillStyle = 'rgba(255,255,255,0.96)';
-              ctx.fillRect(obj.x, obj.y, boxW, boxH);
+              drawRoundedBoxPath(ctx, obj.x, obj.y, boxW, boxH, 6);
+              ctx.fill();
               ctx.strokeStyle = col;
               ctx.lineWidth = 2;
               ctx.setLineDash([5, 3]);
-              ctx.strokeRect(obj.x, obj.y, boxW, boxH);
+              ctx.stroke();
               ctx.setLineDash([]);
             } else if (boxStyle === 'pill') {
-              const r = Math.min(18, boxH / 2);
+              const r = Math.min(22, boxH / 2);
               ctx.fillStyle = 'rgba(255,255,255,0.97)';
-              ctx.beginPath();
-              if (ctx.roundRect) ctx.roundRect(obj.x, obj.y, boxW, boxH, r);
-              else ctx.rect(obj.x, obj.y, boxW, boxH);
+              drawRoundedBoxPath(ctx, obj.x, obj.y, boxW, boxH, r);
               ctx.fill();
               ctx.strokeStyle = col;
               ctx.lineWidth = 2;
@@ -5704,7 +5930,8 @@
               ctx.stroke();
             } else if (boxStyle === 'badge-fill') {
               ctx.fillStyle = col;
-              ctx.fillRect(obj.x, obj.y, boxW, boxH);
+              drawRoundedBoxPath(ctx, obj.x, obj.y, boxW, boxH, 6);
+              ctx.fill();
               drawTextCol = '#ffffff';
             } else if (boxStyle === 'sticky-tint') {
               ctx.fillStyle = '#ffffff';
@@ -5718,9 +5945,32 @@
               ctx.fillRect(obj.x, obj.y, 5, boxH);
             }
 
-            ctx.fillStyle = drawTextCol;
             textLines.forEach((ln, lIdx) => {
-              ctx.fillText(ln, obj.x + padX, obj.y + 4 + fSize + lIdx * lineHeight);
+              const baseLineY = obj.y + padY + fSize + lIdx * lineHeight;
+              if (boxStyle === 'none') {
+                ctx.lineJoin = 'round';
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = 'rgba(255,255,255,0.92)';
+                ctx.strokeText(ln, obj.x + padX, baseLineY);
+              }
+              ctx.fillStyle = drawTextCol;
+              ctx.fillText(ln, obj.x + padX, baseLineY);
+
+              if (obj.underline || obj.doubleUnderline) {
+                const lineW = ctx.measureText(ln).width;
+                ctx.strokeStyle = drawTextCol;
+                ctx.lineWidth = Math.max(1.2, fSize * 0.08);
+                ctx.beginPath();
+                ctx.moveTo(obj.x + padX, baseLineY + 2);
+                ctx.lineTo(obj.x + padX + lineW, baseLineY + 2);
+                ctx.stroke();
+                if (obj.doubleUnderline) {
+                  ctx.beginPath();
+                  ctx.moveTo(obj.x + padX, baseLineY + 5);
+                  ctx.lineTo(obj.x + padX + lineW, baseLineY + 5);
+                  ctx.stroke();
+                }
+              }
             });
           }
           ctx.restore();
@@ -6349,6 +6599,7 @@
           cropLeft: 0
         });
         uiState.selectedObjId = id;
+        uiState.editingTextObjId = null;
         saveProjectToLocal();
         renderAll();
         showToast(`「${title}」を野帳へ配置しました`);
