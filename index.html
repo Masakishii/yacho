@@ -1844,6 +1844,21 @@
       const numRows = tbl.cells.length;
       const numCols = tbl.cells[0]?.length || 1;
 
+      if (event.key === 'Enter' && (event.shiftKey || event.altKey)) {
+        event.preventDefault();
+        const cell = tbl.cells[r]?.[c];
+        if (cell) {
+          cell.multiline = true;
+          cell.val = `${event.target.value}\n`;
+          if ((tbl.rowHeights[r] || 28) < 48) tbl.rowHeights[r] = 48;
+          saveProjectToLocal();
+          renderSheetLayout();
+          renderDrawer();
+          focusCellInput(tableId, r, c);
+        }
+        return;
+      }
+
       if (event.key === 'Enter') {
         event.preventDefault();
         if (r + 1 < numRows) {
@@ -2136,6 +2151,24 @@
       renderDrawer();
     }
 
+    function toggleSelectedCellMultiline() {
+      const tbl = getSelectedTable();
+      if (!tbl) return;
+      const r = uiState.selectedRow;
+      const c = uiState.selectedCol;
+      const cell = tbl.cells[r]?.[c];
+      if (!cell) return;
+      cell.multiline = !cell.multiline;
+      if (cell.multiline && (tbl.rowHeights[r] || 28) < 48) {
+        tbl.rowHeights[r] = 48;
+      }
+      saveProjectToLocal();
+      renderSheetLayout();
+      renderDrawer();
+      focusCellInput(tbl.id, r, c);
+      showToast(cell.multiline ? 'セルの複数行入力をONにしました（Enterで改行）' : 'セルの複数行入力をOFFにしました');
+    }
+
     function resetSelectedCellColors() {
       const tbl = getSelectedTable();
       if (!tbl) return;
@@ -2377,6 +2410,33 @@
       uiState.selectedObjId = id;
       saveProjectToLocal();
       renderAll();
+    }
+
+    function selectTextObjectForEdit(objId) {
+      hideContextMenu();
+      const changed = uiState.selectedObjId !== objId;
+      uiState.selectedObjId = objId;
+      uiState.editingCell = null;
+      if (changed) {
+        document.querySelectorAll('[data-obj-id]').forEach(el => {
+          const isTarget = el.dataset.objId === objId;
+          el.classList.toggle('ring-2', isTarget);
+          el.classList.toggle('ring-blue-500', isTarget);
+          el.classList.toggle('ring-offset-1', isTarget);
+        });
+        updateTableSelectionVisuals();
+      }
+      renderDrawer();
+    }
+
+    function adjustSelectedTextSize(delta) {
+      const obj = getSelectedObject();
+      if (!obj || obj.type !== 'text') return;
+      const nextSize = Math.min(42, Math.max(10, (Number(obj.fontSize) || 15) + delta));
+      obj.fontSize = nextSize;
+      saveProjectToLocal();
+      renderSheetLayout();
+      renderDrawer();
     }
 
     function updateSelectedObjProp(prop, val) {
@@ -3380,7 +3440,7 @@
           boxCss = `background:rgba(255,255,255,0.96); border:2px dashed ${col};`;
           boxExtraCls = 'px-2.5 py-0.5 rounded-md shadow-xs';
         } else if (boxStyle === 'pill') {
-          boxCss = `background:rgba(255,255,255,0.97); border:2px solid ${col}; border-radius:9999px;`;
+          boxCss = `background:rgba(255,255,255,0.97); border:2px solid ${col}; border-radius:18px;`;
           boxExtraCls = 'px-3.5 py-0.5 shadow-xs';
         } else if (boxStyle === 'callout') {
           boxCss = `background:rgba(255,255,255,0.98); border:2px solid ${col}; border-radius:8px;`;
@@ -3395,14 +3455,19 @@
           boxExtraCls = 'px-2.5 py-0.5 shadow-xs';
         }
 
+        const formattedTextHtml = escapeHtml(obj.text || 'メモ').replace(/\n/g, '<br>');
+
         return `
           <div data-drag-kind="object" data-drag-id="${obj.id}" data-obj-id="${obj.id}"
                style="left:${obj.x}px; top:${obj.y}px; color:${textCol}; font-size:${obj.fontSize || 15}px; font-weight:${fw}; text-decoration:${td}; ${boxCss}"
-               class="touch-none absolute z-30 cursor-move whitespace-nowrap ${boxExtraCls} ${selRing}">
+               class="touch-none absolute z-30 cursor-move whitespace-pre-wrap leading-snug max-w-[90%] ${boxExtraCls} ${selRing}">
             <span contenteditable="true"
-                  onpointerdown="event.stopPropagation();"
-                  onblur="const o=getCurrentPage().objects.find(x=>x.id==='${obj.id}'); if(o){o.text=this.innerText; saveProjectToLocal();}"
-                  class="outline-none select-text">${escapeHtml(obj.text || 'メモ')}</span>
+                  onpointerdown="event.stopPropagation(); selectTextObjectForEdit('${obj.id}');"
+                  onfocus="selectTextObjectForEdit('${obj.id}');"
+                  onkeydown="event.stopPropagation();"
+                  oninput="const o=getCurrentPage().objects.find(x=>x.id==='${obj.id}'); if(o){o.text=this.innerText.replace(/\\r\\n/g,'\\n'); saveProjectToLocal();}"
+                  onblur="const o=getCurrentPage().objects.find(x=>x.id==='${obj.id}'); if(o){o.text=this.innerText.replace(/\\r\\n/g,'\\n'); saveProjectToLocal();}"
+                  class="outline-none select-text inline-block min-w-[24px] whitespace-pre-wrap">${formattedTextHtml}</span>
             ${tailHtml}
           </div>
         `;
@@ -3551,15 +3616,18 @@
             const inputControlHtml = cell.multiline
               ? `<textarea data-cell-input="${tbl.id}_${r}_${c}"
                            data-raw-val="${escapeHtml(rawVal)}"
+                           onpointerdown="event.stopPropagation();"
                            onfocus="hideContextMenu(); this.value=this.dataset.rawVal; selectTable('${tbl.id}', ${r}, ${c}, true);"
                            oninput="handleCellInput('${tbl.id}', ${r}, ${c}, this);"
+                           onkeydown="event.stopPropagation();"
                            onblur="handleCellBlur(event, '${tbl.id}', ${r}, ${c}, this);"
                            style="text-align:${hAlign}; font-weight:${cell.bold || r === 0 ? '700' : '400'}; color:${cellTextColor};"
-                           class="w-full h-full px-1.5 py-0.5 bg-transparent outline-none resize-none leading-snug text-[13px] sm:text-[11px] select-text">${escapeHtml(displayVal)}</textarea>`
+                           class="w-full h-full min-h-[38px] px-1.5 py-1 bg-transparent outline-none resize-none leading-snug text-[13px] sm:text-[11px] select-text">${escapeHtml(displayVal)}</textarea>`
               : `<input type="text"
                         data-cell-input="${tbl.id}_${r}_${c}"
                         data-raw-val="${escapeHtml(rawVal)}"
                         value="${escapeHtml(displayVal)}"
+                        onpointerdown="event.stopPropagation();"
                         onfocus="hideContextMenu(); this.value=this.dataset.rawVal; selectTable('${tbl.id}', ${r}, ${c}, true);"
                         oninput="handleCellInput('${tbl.id}', ${r}, ${c}, this);"
                         onkeydown="handleCellKeyDown(event, '${tbl.id}', ${r}, ${c});"
@@ -3786,7 +3854,7 @@
             ${['#0f172a', '#dc2626', '#2563eb', '#059669', '#d97706', '#7c3aed'].map(c => `
               <button onclick="applyTextFormat('foreColor', '${c}')" style="background:${c};" class="w-6 h-6 rounded-full border-2 border-white shadow"></button>
             `).join('')}
-            <input type="color" value="${activeColor}" onchange="applyTextFormat('foreColor', this.value)" class="w-6 h-6 bg-transparent border-0 cursor-pointer" title="フルカラー"/>
+            <input type="color" value="${activeColor}" oninput="applyTextFormat('foreColor', this.value)" onchange="applyTextFormat('foreColor', this.value)" class="w-6 h-6 bg-transparent border-0 cursor-pointer" title="フルカラー"/>
             <button onclick="applyTextFormat('bold')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-black">B</button>
             <button onclick="applyTextFormat('underline')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg underline font-bold">U</button>
             <button onclick="applyTextFormat('doubleUnderline')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-bold" style="text-decoration:underline double;">二重線</button>
@@ -3809,9 +3877,10 @@
                 })()}
               </select>
               <div class="inline-flex items-center gap-1 bg-slate-900 px-1.5 py-0.5 rounded-lg border border-slate-700">
-                <span class="text-[10px] text-slate-300">サイズ(${selObj.fontSize || 15}px):</span>
-                <button onclick="updateSelectedObjProp('fontSize', Math.max(10, (getSelectedObject().fontSize||15)-2))" class="px-1.5 py-0.5 bg-slate-800 rounded font-bold">-</button>
-                <button onclick="updateSelectedObjProp('fontSize', Math.min(36, (getSelectedObject().fontSize||15)+2))" class="px-1.5 py-0.5 bg-slate-800 rounded font-bold">+</button>
+                <span class="text-[10px] text-amber-200 font-bold">サイズ(${selObj.fontSize || 15}px):</span>
+                <button onclick="adjustSelectedTextSize(-2)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded font-extrabold">-</button>
+                <input type="range" min="10" max="42" value="${selObj.fontSize || 15}" oninput="updateSelectedObjProp('fontSize', Number(this.value))" class="w-16 accent-amber-400" />
+                <button onclick="adjustSelectedTextSize(2)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded font-extrabold">+</button>
               </div>
             ` : ''}
             ${selObj ? `
@@ -3869,6 +3938,7 @@
             ${tbl ? `
               <div class="flex flex-wrap items-center gap-1.5 bg-slate-900 p-1.5 rounded-lg border border-slate-800">
                 <span class="px-1.5 py-0.5 bg-indigo-950 border border-indigo-700 text-indigo-300 font-mono font-bold rounded">${curCellCoord}</span>
+                <button onclick="toggleSelectedCellMultiline()" class="px-2 py-0.5 rounded border font-bold ${curCell?.multiline ? 'bg-amber-600 border-amber-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'}" title="セル内の複数行改行入力を切り替え（Enterで改行）">↩️ 複数行</button>
                 <div class="inline-flex rounded border border-slate-700 overflow-hidden font-bold" title="水平方向の文字揃え">
                   <button onclick="setSelectedCellStyle('align', 'left')" class="px-1.5 py-0.5 ${curCellAlign === 'left' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">左揃え</button>
                   <button onclick="setSelectedCellStyle('align', 'center')" class="px-1.5 py-0.5 border-x border-slate-700 ${curCellAlign === 'center' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">中央</button>
@@ -4032,7 +4102,63 @@
         const customList = Array.isArray(appState.customStamps) ? appState.customStamps : [];
 
         let detailBar = '';
-        if (isDateStamp) {
+        if (isLine) {
+          const pts = getLineEndpoints(obj);
+          const curLen = Math.round(Math.hypot(pts.x2 - pts.x1, pts.y2 - pts.y1));
+          const curDeg = Math.round(((Math.atan2(pts.y2 - pts.y1, pts.x2 - pts.x1) * 180) / Math.PI + 360) % 360);
+          const curLineStyle = obj.lineStyle || 'solid';
+          const curStart = obj.startArrow || 'none';
+          const curEnd = obj.endArrow || 'none';
+          const markerOptions = (selectedVal) => `
+            <option value="none" ${selectedVal === 'none' ? 'selected' : ''}>なし</option>
+            <option value="filled" ${selectedVal === 'filled' ? 'selected' : ''}>▶ 黒矢印</option>
+            <option value="open" ${selectedVal === 'open' ? 'selected' : ''}>▷ 白矢印</option>
+            <option value="normal" ${selectedVal === 'normal' ? 'selected' : ''}>＞ 矢印</option>
+            <option value="circle" ${selectedVal === 'circle' ? 'selected' : ''}>● 丸</option>
+            <option value="square" ${selectedVal === 'square' ? 'selected' : ''}>■ 四角</option>
+            <option value="slash" ${selectedVal === 'slash' ? 'selected' : ''}>／ 斜線</option>
+            <option value="dot" ${selectedVal === 'dot' ? 'selected' : ''}>・ 点</option>
+            <option value="tick" ${selectedVal === 'tick' ? 'selected' : ''}>｜ 縦線</option>
+          `;
+          detailBar = `
+            <div class="flex flex-wrap items-center gap-1.5 bg-slate-900 p-1.5 rounded-lg border border-slate-800">
+              <div class="inline-flex items-center gap-1">
+                <span class="text-blue-300 font-bold text-[10px]">始点:</span>
+                <select onchange="updateSelectedObjProp('startArrow', this.value)" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 font-bold text-blue-200">
+                  ${markerOptions(curStart)}
+                </select>
+              </div>
+              <div class="inline-flex items-center gap-1">
+                <span class="text-rose-300 font-bold text-[10px]">終点:</span>
+                <select onchange="updateSelectedObjProp('endArrow', this.value)" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 font-bold text-rose-200">
+                  ${markerOptions(curEnd)}
+                </select>
+              </div>
+              <button onclick="swapSelectedLineEnds()" class="px-2 py-0.5 bg-indigo-800 hover:bg-indigo-700 border border-indigo-600 rounded font-bold text-white" title="始点と終点の向きを入れ替え">⇄ 入替</button>
+              <select onchange="updateSelectedObjProp('lineStyle', this.value)" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 font-bold">
+                <option value="solid" ${curLineStyle === 'solid' ? 'selected' : ''}>実線</option>
+                <option value="double" ${curLineStyle === 'double' ? 'selected' : ''}>2重線</option>
+                <option value="dashed" ${curLineStyle === 'dashed' ? 'selected' : ''}>破線</option>
+                <option value="dotted" ${curLineStyle === 'dotted' ? 'selected' : ''}>点線</option>
+                <option value="dashdot" ${curLineStyle === 'dashdot' ? 'selected' : ''}>一点鎖線</option>
+              </select>
+              <select onchange="updateSelectedObjProp('strokeWidth', Number(this.value))" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 font-bold">
+                <option value="1.5" ${(obj.strokeWidth || 2.5) <= 1.8 ? 'selected' : ''}>細</option>
+                <option value="2.5" ${(obj.strokeWidth || 2.5) > 1.8 && (obj.strokeWidth || 2.5) < 3.5 ? 'selected' : ''}>中</option>
+                <option value="4" ${(obj.strokeWidth || 2.5) >= 3.5 ? 'selected' : ''}>太</option>
+              </select>
+              <div class="inline-flex items-center gap-1 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-700">
+                <span class="text-[10px] text-slate-400">長さ:</span>
+                <input type="number" min="24" max="800" value="${curLen}" onchange="setLineFromAngleOrLength(getSelectedObject(), null, Number(this.value)); saveProjectToLocal(); renderSheetLayout();" class="w-12 bg-transparent font-mono font-bold text-amber-200 outline-none" />
+                <span class="text-[10px] text-slate-400">角度:</span>
+                <input type="number" min="0" max="360" value="${curDeg}" onchange="setLineFromAngleOrLength(getSelectedObject(), Number(this.value), null); saveProjectToLocal(); renderSheetLayout();" class="w-11 bg-transparent font-mono font-bold text-amber-200 outline-none" />
+                <span class="text-[10px] text-slate-400">°</span>
+              </div>
+              <input type="color" value="${obj.color || '#dc2626'}" onchange="updateSelectedObjProp('color', this.value)" class="w-5 h-5 bg-transparent border-0"/>
+              <button onclick="deleteSelectedObject()" class="px-2 py-0.5 bg-rose-800 rounded font-bold">🗑️削除</button>
+            </div>
+          `;
+        } else if (isDateStamp) {
           detailBar = `
             <div class="flex flex-wrap items-center gap-1.5 bg-slate-900 p-1.5 rounded-lg border border-slate-800">
               <span class="text-amber-300 font-bold">💮 日時スタンプ:</span>
@@ -4148,9 +4274,10 @@
               ${['#0f172a', '#dc2626', '#2563eb', '#059669', '#d97706', '#7c3aed'].map(c => `
                 <button onclick="updateSelectedObjProp('color', '${c}')" style="background:${c};" class="w-5 h-5 rounded-full border border-white shadow"></button>
               `).join('')}
-              <input type="color" value="${obj.color || '#dc2626'}" onchange="updateSelectedObjProp('color', this.value)" class="w-5 h-5 bg-transparent border-0"/>
-              <button onclick="updateSelectedObjProp('fontSize', Math.max(10, (getSelectedObject().fontSize||15)-2))" class="px-1.5 py-0.5 bg-slate-800 rounded font-bold">A-</button>
-              <button onclick="updateSelectedObjProp('fontSize', Math.min(36, (getSelectedObject().fontSize||15)+2))" class="px-1.5 py-0.5 bg-slate-800 rounded font-bold">A+</button>
+              <input type="color" value="${obj.color || '#dc2626'}" oninput="updateSelectedObjProp('color', this.value)" onchange="updateSelectedObjProp('color', this.value)" class="w-5 h-5 bg-transparent border-0"/>
+              <button onclick="adjustSelectedTextSize(-2)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded font-extrabold">A-</button>
+              <span class="text-[10px] text-amber-200 font-mono">${obj.fontSize || 15}px</span>
+              <button onclick="adjustSelectedTextSize(2)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded font-extrabold">A+</button>
               <button onclick="deleteSelectedObject()" class="px-2 py-0.5 bg-rose-800 rounded font-bold">🗑️削除</button>
             </div>
           `;
@@ -5510,15 +5637,17 @@
         } else if (obj.type === 'text') {
           const fSize = obj.fontSize || 15;
           const fWeight = obj.bold === false ? '500' : 'bold';
-          const txtStr = obj.text || '';
+          const txtStr = String(obj.text || '');
           const boxStyle = obj.boxStyle || (obj.bgWhite === false ? 'none' : 'card');
           ctx.save();
           ctx.font = `${fWeight} ${fSize}px sans-serif`;
           if (txtStr) {
-            const m = ctx.measureText(txtStr);
+            const textLines = txtStr.split('\n');
+            const maxTextW = Math.max(...textLines.map(ln => ctx.measureText(ln).width), 24);
+            const lineHeight = Math.round(fSize * 1.35);
             const padX = boxStyle === 'pill' ? 14 : 9;
-            const boxW = m.width + padX * 2;
-            const boxH = fSize + 10;
+            const boxW = maxTextW + padX * 2;
+            const boxH = textLines.length * lineHeight + 8;
             let drawTextCol = col;
 
             if (boxStyle === 'card') {
@@ -5549,7 +5678,7 @@
               ctx.strokeRect(obj.x, obj.y, boxW, boxH);
               ctx.setLineDash([]);
             } else if (boxStyle === 'pill') {
-              const r = boxH / 2;
+              const r = Math.min(18, boxH / 2);
               ctx.fillStyle = 'rgba(255,255,255,0.97)';
               ctx.beginPath();
               if (ctx.roundRect) ctx.roundRect(obj.x, obj.y, boxW, boxH, r);
@@ -5590,7 +5719,9 @@
             }
 
             ctx.fillStyle = drawTextCol;
-            ctx.fillText(txtStr, obj.x + padX, obj.y + fSize + 2);
+            textLines.forEach((ln, lIdx) => {
+              ctx.fillText(ln, obj.x + padX, obj.y + 4 + fSize + lIdx * lineHeight);
+            });
           }
           ctx.restore();
         } else if ((obj.type === 'image' || obj.type === 'pdf') && obj.src) {
