@@ -6,7 +6,7 @@
   <title>現場測量・記録野帳アプリ</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
-  <style id="dynamic-print-page-style">@page { size: A4 portrait; margin: 8mm; }</style>
+  <style id="dynamic-print-page-style">@page { size: A4 portrait; margin: 0mm; }</style>
   <style>
     * {
       box-sizing: border-box;
@@ -77,43 +77,47 @@
       pointer-events: none;
     }
 
-    /* 印刷専用スタイル */
+    /* 印刷専用スタイル（合成済み原寸イメージをズレなく1:1印字） */
     @media print {
       html, body {
         background: #ffffff !important;
         overflow: visible !important;
         height: auto !important;
         width: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
       .no-print {
         display: none !important;
       }
-      #sheet-scroll-area {
-        overflow: visible !important;
-        padding: 0 !important;
+      #print-only-container {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        margin: 0 auto;
+        padding: 0;
         background: #ffffff !important;
+      }
+      #print-only-img {
         display: block !important;
-      }
-      #sheet-zoom-wrapper {
-        transform: none !important;
-        margin: 0 auto !important;
-      }
-      #fieldnote-sheet {
-        box-shadow: none !important;
-        margin: 0 auto !important;
-        width: var(--print-mm-w, auto) !important;
-        min-height: var(--print-mm-h, auto) !important;
-      }
-      body.print-exclude-bg #fieldnote-sheet {
-        background-color: #ffffff !important;
-        background-image: none !important;
+        width: var(--print-out-w, 210mm) !important;
+        height: var(--print-out-h, 297mm) !important;
+        max-width: 100% !important;
+        object-fit: contain;
+        margin: 0 auto;
       }
     }
   </style>
 </head>
 <body class="flex flex-col h-[100dvh] w-screen select-none text-slate-100">
+
+  <!-- ==================== 印刷専用出力コンテナ（画面表示時は非表示） ==================== -->
+  <div id="print-only-container" class="hidden">
+    <img id="print-only-img" src="" alt="印刷用野帳シート" />
+  </div>
 
   <!-- ==================== トップヘッダー ==================== -->
   <header class="no-print bg-slate-900 border-b border-slate-800 px-2.5 py-1.5 flex flex-wrap items-center justify-between gap-1.5 shrink-0 z-30">
@@ -183,11 +187,11 @@
   </header>
 
   <!-- ==================== 中央野帳シート作業エリア ==================== -->
-  <main id="sheet-scroll-area" class="flex-1 min-h-0 overflow-auto bg-slate-800/90 p-5 sm:p-8 flex items-start justify-center relative">
+  <main id="sheet-scroll-area" class="no-print flex-1 min-h-0 overflow-auto bg-slate-800/90 p-5 sm:p-8 flex items-start justify-center relative">
     <div id="sheet-zoom-wrapper" class="origin-top transition-transform duration-75 my-auto">
       <div id="crop-marks-frame" class="relative p-6">
         <div id="crop-marks-overlay" class="pointer-events-none absolute inset-0 z-30"></div>
-        <div id="fieldnote-sheet" class="bg-pat-yaecho-green border border-slate-300 shadow-2xl p-4 sm:p-5 flex flex-col relative overflow-hidden text-slate-900"></div>
+        <div id="fieldnote-sheet" class="bg-pat-yaecho-green border border-slate-300 shadow-2xl p-5 flex flex-col relative overflow-hidden text-slate-900"></div>
       </div>
     </div>
   </main>
@@ -387,8 +391,8 @@
           <span>↓</span>
         </button>
 
-        <button onclick="closeModal('modal-export'); setTimeout(() => window.print(), 150);" class="w-full py-2 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 rounded-xl font-bold flex items-center justify-between">
-          <span>🖨️ プリンタで直接印刷（印刷ダイアログ）</span>
+        <button onclick="closeModal('modal-export'); executeDirectPrint();" class="w-full py-2 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 rounded-xl font-bold flex items-center justify-between">
+          <span>🖨️ プリンタで直接印刷（ズレ防止原寸レイアウト）</span>
           <span>→</span>
         </button>
 
@@ -487,7 +491,7 @@
           <button onclick="closeModal('modal-print-preview'); downloadCurrentSheetPdf();" class="bg-rose-600 hover:bg-rose-500 text-white font-extrabold px-3 py-1 rounded-lg">
             📄 PDF保存
           </button>
-          <button onclick="closeModal('modal-print-preview'); setTimeout(() => window.print(), 150);" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-3 py-1 rounded-lg">
+          <button onclick="closeModal('modal-print-preview'); executeDirectPrint();" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-3 py-1 rounded-lg">
             🖨️ 印刷
           </button>
           <button onclick="closeModal('modal-print-preview')" class="text-slate-400 hover:text-white text-lg px-2">✕</button>
@@ -1370,7 +1374,7 @@
       const targetUrl = (appState.historyWebhookUrl || appState.discordWebhookUrl || '').trim();
       if (!targetUrl) return;
 
-      const canvas = await renderPageObjectToCanvas(deletedPage);
+      const canvas = await renderPageObjectToCanvas(deletedPage, false);
       const pngBlob = await canvasToPngBlob(canvas);
       const safeTitle = String(deletedPage.title || `page_${pageIndex + 1}`).replace(/[\\/:*?"<>|\s]+/g, '_').slice(0, 28);
       const ts = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
@@ -3903,16 +3907,15 @@
       const printStyleEl = document.getElementById('dynamic-print-page-style');
       if (printStyleEl) {
         if (useA4Sheet) {
-          printStyleEl.textContent = `@page { size: ${isLandscapeForA4 ? 'A4 landscape' : 'A4 portrait'}; margin: 8mm; }`;
+          printStyleEl.textContent = `@page { size: ${isLandscapeForA4 ? 'A4 landscape' : 'A4 portrait'}; margin: 0mm; }`;
         } else {
-          printStyleEl.textContent = `@page { size: ${dim.mmW}mm ${dim.mmH}mm; margin: 4mm; }`;
+          const padMm = p.showCropMarks !== false ? 14 : 0;
+          printStyleEl.textContent = `@page { size: ${dim.mmW + padMm}mm ${dim.mmH + padMm}mm; margin: 0mm; }`;
         }
       }
-      sheet.style.setProperty('--print-mm-w', `${dim.mmW}mm`);
-      sheet.style.setProperty('--print-mm-h', `${dim.mmH}mm`);
       document.body.classList.toggle('print-exclude-bg', p.printIncludeBg === false);
 
-      sheet.className = `bg-pat-${p.bgStyle || 'yaecho-green'} border ${dim.isHalf ? 'border-dashed border-2 border-emerald-600' : 'border-slate-300'} shadow-2xl p-4 sm:p-5 flex flex-col relative overflow-hidden text-slate-900`;
+      sheet.className = `bg-pat-${p.bgStyle || 'yaecho-green'} border ${dim.isHalf ? 'border-dashed border-2 border-emerald-600' : 'border-slate-300'} shadow-2xl p-5 flex flex-col relative overflow-hidden text-slate-900`;
       sheet.style.width = `${dim.pxW}px`;
       sheet.style.minHeight = `${dim.pxH}px`;
 
@@ -3920,7 +3923,7 @@
 
       const showHeaderRow = p.showTitle || p.meta.showDate || p.meta.showWeather || p.meta.showStaff;
       const headerHtml = showHeaderRow ? `
-        <div class="flex flex-wrap items-center justify-between gap-2 pb-2 mb-2.5 border-b-2 border-emerald-700/80 text-xs font-extrabold text-slate-900 z-10">
+        <div id="sheet-header-row" class="flex flex-wrap items-center justify-between gap-2 pb-2 mb-2.5 border-b-2 border-emerald-700/80 text-xs font-extrabold text-slate-900 z-10">
           ${p.showTitle ? `
             <input type="text" value="${escapeHtml(p.title)}"
                    onchange="getCurrentPage().title=this.value; saveProjectToLocal();"
@@ -5334,7 +5337,7 @@
       renderTemplateModalBody();
     }
 
-    // ==================== 高解像度 2x Canvas PNG合成 ====================
+    // ==================== 高解像度 2x Canvas PNG合成（DOM実測座標連動でズレゼロ） ====================
     function wrapCanvasTextLines(ctx, textStr, maxInnerWidth) {
       const rawLines = String(textStr || '').split('\n');
       if (!maxInnerWidth || maxInnerWidth <= 12) return rawLines;
@@ -5378,7 +5381,142 @@
       }
     }
 
-    async function renderPageObjectToCanvas(pageObj) {
+    function drawRichMemoEditorToCanvas(ctx, p, fallbackX, fallbackY, fallbackMaxW) {
+      const editorEl = document.getElementById('memo-rich-editor');
+      const sheetEl = document.getElementById('fieldnote-sheet');
+      const defaultColor = p.memo.color || '#0f172a';
+      const defaultSize = p.memo.fontSize || 14;
+      const defaultBold = !!p.memo.bold;
+      const defaultUnderline = !!p.memo.underline;
+      const defaultDoubleUnderline = !!p.memo.doubleUnderline;
+
+      if (editorEl && sheetEl && editorEl.offsetParent !== null) {
+        const sheetRect = sheetEl.getBoundingClientRect();
+        const zoom = uiState.zoom || 1;
+        const walker = document.createTreeWalker(editorEl, NodeFilter.SHOW_TEXT, null);
+        let textNode;
+        const segments = [];
+
+        while ((textNode = walker.nextNode())) {
+          const rawVal = textNode.nodeValue || '';
+          if (!rawVal) continue;
+          const parentEl = textNode.parentElement || editorEl;
+          const comp = window.getComputedStyle(parentEl);
+          const color = comp.color || defaultColor;
+          const fSize = parseFloat(comp.fontSize) || defaultSize;
+          const fWeightNum = parseInt(comp.fontWeight, 10);
+          const isBold = defaultBold || comp.fontWeight === 'bold' || (!Number.isNaN(fWeightNum) && fWeightNum >= 600);
+          const tdLine = comp.textDecorationLine || comp.textDecoration || '';
+          const tdStyle = comp.textDecorationStyle || '';
+          const isDoubleUl = defaultDoubleUnderline || (tdLine.includes('underline') && tdStyle === 'double');
+          const isSingleUl = !isDoubleUl && (defaultUnderline || tdLine.includes('underline'));
+
+          const range = document.createRange();
+          let i = 0;
+          while (i < rawVal.length) {
+            const ch = rawVal[i];
+            if (ch === '\n' || ch === '\r') {
+              i++;
+              continue;
+            }
+            range.setStart(textNode, i);
+            range.setEnd(textNode, i + 1);
+            const firstRect = range.getBoundingClientRect();
+            if (firstRect.width === 0 && firstRect.height === 0) {
+              i++;
+              continue;
+            }
+            let j = i + 1;
+            let lastRect = firstRect;
+            while (j < rawVal.length && rawVal[j] !== '\n' && rawVal[j] !== '\r') {
+              range.setStart(textNode, j);
+              range.setEnd(textNode, j + 1);
+              const r = range.getBoundingClientRect();
+              if (r.width === 0 && r.height === 0) {
+                j++;
+                continue;
+              }
+              if (Math.abs(r.top - firstRect.top) > 6) break;
+              lastRect = r;
+              j++;
+            }
+            const sliceText = rawVal.slice(i, j);
+            const x = (firstRect.left - sheetRect.left) / zoom;
+            const yTop = (firstRect.top - sheetRect.top) / zoom;
+            const h = Math.max(fSize, firstRect.height / zoom);
+            const w = Math.max(1, (lastRect.right - firstRect.left) / zoom);
+            segments.push({
+              text: sliceText,
+              x,
+              yTop,
+              w,
+              h,
+              color,
+              fSize,
+              isBold,
+              isSingleUl,
+              isDoubleUl
+            });
+            i = j;
+          }
+        }
+
+        if (segments.length > 0) {
+          for (const seg of segments) {
+            ctx.save();
+            ctx.font = `${seg.isBold ? 'bold ' : ''}${seg.fSize}px sans-serif`;
+            ctx.fillStyle = seg.color;
+            const baselineY = seg.yTop + (seg.h + seg.fSize * 0.78) / 2;
+            ctx.fillText(seg.text, seg.x, baselineY);
+            if (seg.isSingleUl || seg.isDoubleUl) {
+              ctx.strokeStyle = seg.color;
+              ctx.lineWidth = Math.max(1.2, seg.fSize * 0.08);
+              ctx.beginPath();
+              ctx.moveTo(seg.x, baselineY + 2);
+              ctx.lineTo(seg.x + seg.w, baselineY + 2);
+              ctx.stroke();
+              if (seg.isDoubleUl) {
+                ctx.beginPath();
+                ctx.moveTo(seg.x, baselineY + 5);
+                ctx.lineTo(seg.x + seg.w, baselineY + 5);
+                ctx.stroke();
+              }
+            }
+            ctx.restore();
+          }
+          return;
+        }
+      }
+
+      // フォールバック（非アクティブページ一括PDF時や空メモ時）
+      ctx.save();
+      ctx.fillStyle = defaultColor;
+      ctx.font = `${defaultBold ? 'bold ' : ''}${defaultSize}px sans-serif`;
+      const wrappedLines = wrapCanvasTextLines(ctx, p.memo.text || '', fallbackMaxW);
+      const lineStep = 28;
+      wrappedLines.forEach((line, idx) => {
+        const baselineY = fallbackY + defaultSize + idx * lineStep;
+        ctx.fillText(line, fallbackX, baselineY);
+        if ((defaultUnderline || defaultDoubleUnderline) && line.trim() !== '') {
+          const lw = ctx.measureText(line).width;
+          ctx.strokeStyle = defaultColor;
+          ctx.lineWidth = Math.max(1.2, defaultSize * 0.08);
+          ctx.beginPath();
+          ctx.moveTo(fallbackX, baselineY + 2);
+          ctx.lineTo(fallbackX + lw, baselineY + 2);
+          ctx.stroke();
+          if (defaultDoubleUnderline) {
+            ctx.beginPath();
+            ctx.moveTo(fallbackX, baselineY + 5);
+            ctx.lineTo(fallbackX + lw, baselineY + 5);
+            ctx.stroke();
+          }
+        }
+      });
+      ctx.restore();
+    }
+
+    async function renderPageObjectToCanvas(pageObj, isCurrentActivePage = false) {
       const p = pageObj || getCurrentPage();
       const dim = getSheetDimensions(p);
       const pad = p.showCropMarks !== false ? 24 : 0;
@@ -5387,6 +5525,10 @@
       const mmScale = dim.mmW / Math.max(1, dim.pxW);
       const totalMmW = Math.round(totalW * mmScale * 10) / 10;
       const totalMmH = Math.round(totalH * mmScale * 10) / 10;
+
+      const sheetEl = isCurrentActivePage ? document.getElementById('fieldnote-sheet') : null;
+      const sheetRect = sheetEl ? sheetEl.getBoundingClientRect() : null;
+      const zoom = uiState.zoom || 1;
 
       const canvas = document.createElement('canvas');
       canvas.width = totalW * 2;
@@ -5481,11 +5623,17 @@
         ctx.beginPath(); ctx.moveTo(0, dim.pxH / 2); ctx.lineTo(dim.pxW, dim.pxH / 2); ctx.stroke();
       }
 
-      let contentTop = 20;
+      const sheetPad = 20;
+      let contentTop = sheetPad;
       if (p.showTitle || p.meta.showDate || p.meta.showWeather || p.meta.showStaff) {
+        const hdrEl = isCurrentActivePage ? document.getElementById('sheet-header-row') : null;
+        const hdrBottomY = (hdrEl && sheetRect)
+          ? Math.round((hdrEl.getBoundingClientRect().bottom - sheetRect.top) / zoom)
+          : (sheetPad + 30);
+
         ctx.fillStyle = '#064e3b';
         ctx.font = 'bold 14px sans-serif';
-        if (p.showTitle) ctx.fillText(p.title, 18, 30);
+        if (p.showTitle) ctx.fillText(p.title, sheetPad, sheetPad + 16);
         const metaParts = [];
         if (p.meta.showDate) metaParts.push(`日時:${p.meta.date}`);
         if (p.meta.showWeather) metaParts.push(`天候:${p.meta.weather}`);
@@ -5494,30 +5642,107 @@
           ctx.font = 'bold 11px sans-serif';
           ctx.fillStyle = '#334155';
           ctx.textAlign = 'right';
-          ctx.fillText(metaParts.join('  '), dim.pxW - 18, 30);
+          ctx.fillText(metaParts.join('  '), dim.pxW - sheetPad, sheetPad + 16);
           ctx.textAlign = 'left';
         }
-        ctx.strokeStyle = '#047857';
+        ctx.strokeStyle = 'rgba(4, 120, 87, 0.8)';
         ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(18, 40); ctx.lineTo(dim.pxW - 18, 40); ctx.stroke();
-        contentTop = 58;
+        ctx.beginPath(); ctx.moveTo(sheetPad, hdrBottomY - 1); ctx.lineTo(dim.pxW - sheetPad, hdrBottomY - 1); ctx.stroke();
+        contentTop = hdrBottomY + 10;
       }
 
+      // メモ本文の描画（アクティブページは実測Range座標、非表示ページはレイアウト計算座標）
       if (p.composeMode !== 'table-only') {
-        ctx.fillStyle = p.memo.color || '#0f172a';
-        ctx.font = `${p.memo.bold ? 'bold ' : ''}${p.memo.fontSize || 14}px sans-serif`;
-        const lines = String(p.memo.text || '').split('\n');
-        lines.forEach((line, idx) => {
-          ctx.fillText(line, 20, contentTop + idx * 24);
-        });
+        const hasDockLeft = p.tables.some(t => t.mode === 'dock-left');
+        const hasDockRight = p.tables.some(t => t.mode === 'dock-right');
+        const dockTopTables = p.tables.filter(t => t.mode === 'dock-top');
+        const innerW = dim.pxW - sheetPad * 2;
+        const colSpanW = (innerW - 24) / 12;
+        const fallbackMemoX = hasDockLeft ? Math.round(sheetPad + colSpanW * 5 + 12) : sheetPad;
+        const fallbackMemoW = (hasDockLeft && hasDockRight)
+          ? Math.round(colSpanW * 4)
+          : ((hasDockLeft || hasDockRight) ? Math.round(colSpanW * 7) : innerW);
+        let fallbackMemoY = contentTop;
+        if (!hasDockLeft && !hasDockRight && dockTopTables.length > 0) {
+          dockTopTables.forEach(t => {
+            const th = (t.showTitleBar ? 24 : 0) + t.rowHeights.reduce((a, b) => a + (b || 28), 0) + 12;
+            fallbackMemoY += th;
+          });
+        }
+        if (isCurrentActivePage) {
+          drawRichMemoEditorToCanvas(ctx, p, fallbackMemoX, fallbackMemoY, fallbackMemoW);
+        } else {
+          ctx.save();
+          ctx.fillStyle = p.memo.color || '#0f172a';
+          ctx.font = `${p.memo.bold ? 'bold ' : ''}${p.memo.fontSize || 14}px sans-serif`;
+          const wrappedLines = wrapCanvasTextLines(ctx, p.memo.text || '', fallbackMemoW);
+          wrappedLines.forEach((line, idx) => {
+            ctx.fillText(line, fallbackMemoX, fallbackMemoY + (p.memo.fontSize || 14) + idx * 28);
+          });
+          ctx.restore();
+        }
       }
 
+      // 表の描画（実測位置または計算位置に完全一致）
       if (p.composeMode !== 'memo-only') {
-        p.tables.forEach((tbl, tIdx) => {
-          const startX = tbl.mode === 'float' ? (tbl.x || 36) : (tbl.mode === 'dock-left' ? 18 : (tbl.mode === 'dock-right' ? Math.round(dim.pxW * 0.45) : 18));
-          let curY = tbl.mode === 'float' ? (tbl.y || 66) : (contentTop + tIdx * 140);
+        const innerW = dim.pxW - sheetPad * 2;
+        const colSpanW = (innerW - 24) / 12;
+        let dockLeftY = contentTop;
+        let dockRightY = contentTop;
+        let dockTopY = contentTop;
+        let dockBottomY = dim.pxH - sheetPad;
+
+        const dockBottomTables = p.tables.filter(t => t.mode === 'dock-bottom');
+        if (dockBottomTables.length > 0) {
+          const totalBottomH = dockBottomTables.reduce((sum, t) => sum + (t.showTitleBar ? 24 : 0) + t.rowHeights.reduce((a, b) => a + (b || 28), 0) + 8, 0);
+          dockBottomY = Math.max(contentTop + 60, dim.pxH - sheetPad - totalBottomH);
+        }
+
+        p.tables.forEach(tbl => {
+          const hasTitle = tbl.showTitleBar === true || tbl.showTitleBar === 'always';
+          const titleBarH = hasTitle ? 24 : 0;
+          const totalTblW = tbl.colWidths.reduce((a, b) => a + (b || 80), 0);
+          const totalTblH = titleBarH + tbl.rowHeights.reduce((a, b) => a + (b || 28), 0);
+
+          let boxX = tbl.x || 36;
+          let boxY = tbl.y || 66;
+
+          const domBox = (isCurrentActivePage && sheetRect) ? document.querySelector(`[data-table-box="${tbl.id}"]`) : null;
+          const domTableEl = domBox ? domBox.querySelector('table') : null;
+          if (domBox && domTableEl && sheetRect) {
+            const bRect = domBox.getBoundingClientRect();
+            const tRect = domTableEl.getBoundingClientRect();
+            boxX = (bRect.left - sheetRect.left) / zoom;
+            boxY = (tRect.top - sheetRect.top) / zoom - titleBarH;
+          } else if (tbl.mode === 'dock-left') {
+            boxX = sheetPad;
+            boxY = dockLeftY;
+            dockLeftY += totalTblH + 8;
+          } else if (tbl.mode === 'dock-right') {
+            boxX = Math.round(sheetPad + colSpanW * 7 + 12);
+            boxY = dockRightY;
+            dockRightY += totalTblH + 8;
+          } else if (tbl.mode === 'dock-top') {
+            boxX = sheetPad;
+            boxY = dockTopY;
+            dockTopY += totalTblH + 8;
+          } else if (tbl.mode === 'dock-bottom') {
+            boxX = sheetPad;
+            boxY = dockBottomY;
+            dockBottomY += totalTblH + 8;
+          }
+
+          if (hasTitle) {
+            ctx.fillStyle = tbl.titleBg || '#2563eb';
+            ctx.fillRect(boxX, boxY, totalTblW, titleBarH);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.fillText(tbl.title || '表', boxX + 8, boxY + 16);
+          }
+
+          let curY = boxY + titleBarH;
           tbl.cells.forEach((row, r) => {
-            let curX = startX;
+            let curX = boxX;
             const rh = tbl.rowHeights[r] || 28;
             row.forEach((cell, c) => {
               const cw = tbl.colWidths[c] || 80;
@@ -5573,7 +5798,7 @@
               ctx.fillStyle = cellTextColor;
               ctx.font = `${cell.bold || r === 0 ? 'bold ' : ''}12px sans-serif`;
               const hAlign = cell.align || (r === 0 ? 'center' : 'left');
-              const vAlign = cell.valign || 'middle';
+              const vAlign = cell.valign || (cell.multiline ? 'top' : 'middle');
               ctx.textAlign = hAlign;
               let textX = curX + 6;
               if (hAlign === 'center') textX = curX + cw / 2;
@@ -5582,7 +5807,9 @@
               if (vAlign === 'top') textY = curY + 14;
               else if (vAlign === 'bottom') textY = curY + rh - 5;
               const rawDisplayStr = String(evalTableCellValue(tbl, r, c));
-              const cellLines = rawDisplayStr.split('\n');
+              const cellLines = cell.multiline
+                ? wrapCanvasTextLines(ctx, rawDisplayStr, Math.max(16, cw - 12))
+                : rawDisplayStr.split('\n');
               if (cellLines.length > 1) {
                 cellLines.forEach((ln, lIdx) => {
                   ctx.fillText(ln, textX, (vAlign === 'top' ? curY + 14 : textY) + lIdx * 14);
@@ -5595,6 +5822,12 @@
             });
             curY += rh;
           });
+
+          if (tbl.showOuterBorder) {
+            ctx.strokeStyle = tbl.outerBorderColor || '#2563eb';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(boxX, boxY, totalTblW, totalTblH);
+          }
         });
       }
 
@@ -6010,7 +6243,8 @@
       const nb = getCurrentNotebook();
       const idx = typeof targetPageIndex === 'number' ? targetPageIndex : nb.currentPageIndex;
       const p = nb.pages[idx] || getCurrentPage();
-      return renderPageObjectToCanvas(p);
+      const isCurrentActive = idx === nb.currentPageIndex;
+      return renderPageObjectToCanvas(p, isCurrentActive);
     }
 
     async function renderCurrentPageToCanvas() {
@@ -6180,6 +6414,73 @@
       setTimeout(() => URL.revokeObjectURL(url), 10000);
       closeModal('modal-export');
       showToast(`全${nb.pages.length}ページの一括PDFを保存しました`);
+    }
+
+    // ==================== ズレゼロ統一印刷実行（プレビュー・PDF保存と100%同一画像で印字） ====================
+    async function buildCompositePrintableDataUrl() {
+      const sheetCanvas = await renderCurrentPageToCanvas();
+      const mmW = sheetCanvas.__mmW || 182;
+      const mmH = sheetCanvas.__mmH || 165;
+
+      if (appState.pdfInA4 === false) {
+        return {
+          dataUrl: sheetCanvas.toDataURL('image/png'),
+          outMmW: mmW,
+          outMmH: mmH,
+          isA4: false
+        };
+      }
+
+      const isLandscape = mmW > 210 && mmH <= 210;
+      const a4MmW = isLandscape ? 297 : 210;
+      const a4MmH = isLandscape ? 210 : 297;
+      const pxPerMm = 5.0;
+
+      const a4Canvas = document.createElement('canvas');
+      a4Canvas.width = Math.round(a4MmW * pxPerMm);
+      a4Canvas.height = Math.round(a4MmH * pxPerMm);
+      const ctx = a4Canvas.getContext('2d');
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, a4Canvas.width, a4Canvas.height);
+
+      const fitScale = (mmW > a4MmW || mmH > a4MmH) ? Math.min(a4MmW / mmW, a4MmH / mmH) : 1.0;
+      const drawW = Math.round(mmW * fitScale * pxPerMm);
+      const drawH = Math.round(mmH * fitScale * pxPerMm);
+      const drawX = Math.round((a4Canvas.width - drawW) / 2);
+      const drawY = Math.round((a4Canvas.height - drawH) / 2);
+
+      ctx.drawImage(sheetCanvas, drawX, drawY, drawW, drawH);
+
+      return {
+        dataUrl: a4Canvas.toDataURL('image/png'),
+        outMmW: a4MmW,
+        outMmH: a4MmH,
+        isA4: true
+      };
+    }
+
+    async function executeDirectPrint() {
+      showToast('印刷用原寸レイアウトを準備しています...');
+      const built = await buildCompositePrintableDataUrl();
+      const printStyleEl = document.getElementById('dynamic-print-page-style');
+      if (printStyleEl) {
+        if (built.isA4) {
+          printStyleEl.textContent = `@page { size: ${built.outMmW > built.outMmH ? 'A4 landscape' : 'A4 portrait'}; margin: 0mm; }`;
+        } else {
+          printStyleEl.textContent = `@page { size: ${built.outMmW}mm ${built.outMmH}mm; margin: 0mm; }`;
+        }
+      }
+      const printImg = document.getElementById('print-only-img');
+      if (printImg) {
+        printImg.style.setProperty('--print-out-w', `${built.outMmW}mm`);
+        printImg.style.setProperty('--print-out-h', `${built.outMmH}mm`);
+        printImg.src = built.dataUrl;
+        if (printImg.decode) {
+          try { await printImg.decode(); } catch (_) {}
+        }
+      }
+      setTimeout(() => window.print(), 80);
     }
 
     // ==================== 節目保存（PNG＋JSON送信）・履歴Webhook・オフライン送信キュー ====================
