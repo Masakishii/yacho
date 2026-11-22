@@ -114,18 +114,18 @@
 </head>
 <body class="flex flex-col h-[100dvh] w-screen select-none text-slate-100">
 
-  <!-- ==================== 印刷専用出力コンテナ（画面表示時は非表示） ==================== -->
+  <!-- ==================== 印刷専用出力コンテナ ==================== -->
   <div id="print-only-container" class="hidden">
     <img id="print-only-img" src="" alt="印刷用野帳シート" />
   </div>
 
   <!-- ==================== トップヘッダー ==================== -->
   <header class="no-print bg-slate-900 border-b border-slate-800 px-2.5 py-1.5 flex flex-wrap items-center justify-between gap-1.5 shrink-0 z-30">
-    <!-- 左：テーマ別ノート切替ボタン（本棚）＆ ズーム・待機キュー・用紙サイズ表示 -->
+    <!-- 左：テーマ別ノート切替ボタン ＆ ズーム・待機キュー・用紙サイズ表示 -->
     <div class="flex items-center gap-1.5 min-w-0 sm:order-1">
       <button id="notebook-switcher-btn" onclick="openNotebookModal()"
               style="border-color: #10b981;"
-              class="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 border-l-4 border border-slate-700 px-2.5 py-1 rounded-lg min-w-0 max-w-[165px] sm:max-w-[215px] cursor-pointer"
+              class="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 border-l-4 border border-slate-700 px-2.5 py-1 rounded-lg min-w-0 max-w-[155px] sm:max-w-[205px] cursor-pointer"
               title="タップしてテーマ別のノートを切り替え・新規作成">
         <span id="header-notebook-icon" class="text-sm sm:text-base shrink-0">📓</span>
         <span id="header-notebook-name" class="font-extrabold text-xs sm:text-sm tracking-tight text-white truncate">現場測量・記録野帳</span>
@@ -134,14 +134,14 @@
 
       <button id="zoom-badge" onclick="setSheetZoom(1.0)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-300 font-mono text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 cursor-pointer" title="タップで100%表示に戻す">100%</button>
 
-      <button id="outbox-queue-badge" onclick="flushOfflineDiscordQueue(false)" class="hidden bg-amber-950 hover:bg-amber-900 border border-amber-500/70 text-amber-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full animate-pulse shrink-0 cursor-pointer" title="オフライン待機中のDiscord履歴送信キュー（オンライン復帰で自動送信／タップで今すぐ再送）">
+      <button id="outbox-queue-badge" onclick="flushOfflineDiscordQueue(false)" class="hidden bg-amber-950 hover:bg-amber-900 border border-amber-500/70 text-amber-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full animate-pulse shrink-0 cursor-pointer" title="オフライン待機中のDiscord履歴送信キュー">
         ⏳ 待機0
       </button>
 
       <span id="paper-size-badge" class="hidden xl:inline-block bg-emerald-950 border border-emerald-700/70 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">紙野帳(91×165) 縦見開き</span>
     </div>
 
-    <!-- 右：接続URL一括設定・豆図・一時保存・テンプレ・Discord・出力 -->
+    <!-- 右：接続URL一括設定・豆図やりとり・豆図作成・一時保存・テンプレ・Discord・出力 -->
     <div class="flex flex-wrap items-center gap-1 sm:gap-1.5 shrink-0 sm:order-3">
       <button id="btn-embed-apply" onclick="sendSheetToHostApp()" class="hidden bg-teal-600 hover:bg-teal-500 active:scale-95 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg items-center gap-1 shadow whitespace-nowrap cursor-pointer">
         <span>📌</span>
@@ -151,9 +151,13 @@
         <span>⚙️</span>
         <span id="fn-cloud-header-label" class="hidden md:inline">接続・URL設定</span>
       </button>
+      <button onclick="openMamezuExchangeModal()" class="bg-sky-700 hover:bg-sky-600 active:scale-95 border border-sky-500/60 text-white text-xs font-extrabold px-2 py-1.5 rounded-lg flex items-center gap-1 shadow whitespace-nowrap cursor-pointer" title="写真台帳システムと豆図をクラウド経由でやりとり（出力・入力）">
+        <span>🔄</span>
+        <span class="hidden sm:inline">豆図やりとり</span>
+      </button>
       <button onclick="openFnMamezuModal('mamezu')" class="bg-teal-700 hover:bg-teal-600 active:scale-95 border border-teal-500/60 text-white text-xs font-bold px-2 py-1.5 rounded-lg flex items-center gap-1 shadow whitespace-nowrap cursor-pointer" title="豆図（施工略図・断面図）を作成して野帳貼付・写真台帳へ共有">
         <span>📐</span>
-        <span class="hidden sm:inline">豆図作成</span>
+        <span class="hidden lg:inline">豆図作成</span>
       </button>
       <button onclick="executeMilestoneSave()" class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-extrabold px-2 py-1.5 rounded-lg flex items-center gap-1 shadow whitespace-nowrap cursor-pointer" title="現在の状態を一時保存（端末二重保存 ＋ 一時保存用WebhookへPDF＆PNG＆復元用JSONを自動送信）">
         <span>⏸️</span>
@@ -161,7 +165,7 @@
       </button>
       <button onclick="openTemplateModal('schedule')" class="bg-amber-600 hover:bg-amber-500 active:scale-95 text-white text-xs font-bold px-2 py-1.5 rounded-lg flex items-center gap-1 shadow whitespace-nowrap cursor-pointer" title="予定・工程表・野帳構成・表テンプレートの呼び出し">
         <span>📚</span>
-        <span class="hidden lg:inline">テンプレ</span>
+        <span class="hidden xl:inline">テンプレ</span>
       </button>
       <button onclick="openDiscordModal()" class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-xs font-bold px-2 py-1.5 rounded-lg flex items-center gap-1 shadow whitespace-nowrap cursor-pointer" title="Discord送信（本保存用・一時保存用）">
         <span>🚀</span>
@@ -306,7 +310,7 @@
     </div>
   </div>
 
-  <!-- ==================== モーダル2：Discord 送信実行モーダル（URL設定は一括設定画面へ統合） ==================== -->
+  <!-- ==================== モーダル2：Discord 送信実行モーダル ==================== -->
   <div id="modal-discord" class="fixed inset-0 bg-black/70 backdrop-blur-xs hidden items-center justify-center p-3 z-50 no-print">
     <div class="bg-slate-900 border border-slate-700 text-white rounded-2xl w-full max-w-md max-h-[90dvh] flex flex-col overflow-hidden shadow-2xl">
       <div class="px-4 py-3 bg-indigo-950 border-b border-indigo-800/60 flex items-center justify-between shrink-0">
@@ -355,12 +359,12 @@
     </div>
   </div>
 
-  <!-- ==================== モーダル2B：⚙️ 接続URL一括設定（同期サーバー ＋ Discord Webhook 2系統） ＆ 写真台帳連携 ==================== -->
+  <!-- ==================== モーダル2B：⚙️ 接続URL一括設定（同期サーバー ＋ Discord Webhook 2系統） ==================== -->
   <div id="modal-fn-cloud" class="fixed inset-0 bg-black/80 backdrop-blur-xs hidden items-center justify-center p-2 sm:p-4 z-50 no-print">
     <div class="bg-slate-900 border border-cyan-700/70 text-white rounded-2xl w-full max-w-2xl max-h-[92dvh] flex flex-col overflow-hidden shadow-2xl text-xs">
       <div class="px-4 py-3 bg-cyan-950 border-b border-cyan-800 flex items-center justify-between shrink-0">
         <h2 class="font-extrabold text-sm flex items-center gap-1.5">
-          <span>⚙️</span> 接続URL一括設定（同期サーバーURL ＋ Discord Webhook 2系統）＆ 写真台帳連携
+          <span>⚙️</span> 接続URL一括設定（同期サーバーURL ＋ Discord Webhook 2系統）＆ クラウド同期
         </h2>
         <button onclick="closeModal('modal-fn-cloud')" class="text-slate-400 hover:text-white text-lg px-2 cursor-pointer">✕</button>
       </div>
@@ -445,6 +449,61 @@
     </div>
   </div>
 
+  <!-- ==================== モーダル2D：🔄 豆図やりとり（写真台帳への出力 ＆ 写真台帳からの入力） ==================== -->
+  <div id="modal-fn-mamezu-exchange" class="fixed inset-0 bg-black/80 backdrop-blur-xs hidden items-center justify-center p-2 sm:p-4 z-50 no-print">
+    <div class="bg-slate-900 border border-sky-600/80 text-white rounded-2xl w-full max-w-2xl max-h-[90dvh] flex flex-col overflow-hidden shadow-2xl text-xs">
+      <div class="px-4 py-3 bg-sky-950 border-b border-sky-800 flex items-center justify-between shrink-0">
+        <h2 class="font-extrabold text-sm flex items-center gap-1.5">
+          <span>🔄</span> 写真台帳システム ⇔ 野帳 豆図やりとり（クラウド出力・入力）
+        </h2>
+        <button onclick="closeModal('modal-fn-mamezu-exchange')" class="text-slate-400 hover:text-white text-lg px-2 cursor-pointer">✕</button>
+      </div>
+
+      <div class="p-4 overflow-y-auto space-y-3.5 flex-1">
+        <!-- 1. 野帳 → 写真台帳への出力 -->
+        <div class="p-3 rounded-xl bg-slate-800/90 border border-emerald-700/70 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="font-extrabold text-emerald-300">1. ⬆️ 野帳から写真台帳へ豆図を出力（Push）</span>
+            <span id="mz-ex-conn-badge" class="px-2 py-0.5 rounded-full bg-slate-900 text-[10px] font-bold text-slate-300">接続確認中</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button onclick="shareCurrentSheetAsMamezuToCloud(); refreshMamezuExchangeList();" class="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-extrabold shadow cursor-pointer text-left">
+              <div>📤 現在のシート全体を豆図として出力</div>
+              <div class="text-[10px] font-normal opacity-90 mt-0.5">「📐 豆図(84×49)」や現在の頁全体をそのまま送信</div>
+            </button>
+            <button onclick="exportSelectedObjectsAsMamezuToCloud()" class="py-2.5 px-3 bg-teal-600 hover:bg-teal-500 text-white rounded-xl font-extrabold shadow cursor-pointer text-left">
+              <div>📤 選択中の図形・グループだけ出力</div>
+              <div class="text-[10px] font-normal opacity-90 mt-0.5">選択中の図形・引き出し線・文字を480×280豆図化</div>
+            </button>
+          </div>
+          <div class="flex items-center justify-between pt-1 border-t border-slate-700/80 text-[11px]">
+            <span class="text-slate-300">新しく描いてそのまま出力する場合：</span>
+            <div class="flex items-center gap-1.5">
+              <button onclick="closeModal('modal-fn-mamezu-exchange'); setPaperSize('mamezu');" class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 rounded-lg font-bold text-amber-200 cursor-pointer">
+                📐 用紙を豆図(84×49)にする
+              </button>
+              <button onclick="closeModal('modal-fn-mamezu-exchange'); openFnMamezuModal('mamezu');" class="px-2.5 py-1 bg-cyan-700 hover:bg-cyan-600 rounded-lg font-bold text-white cursor-pointer">
+                ✏️ 豆図エディタを開く
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. 写真台帳 → 野帳への入力 -->
+        <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-extrabold text-sky-300">2. ⬇️ 写真台帳から野帳へ豆図・写真を取り込み（Pull）</span>
+            <div class="flex items-center gap-1.5">
+              <button onclick="openFnCloudSyncModal()" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 rounded text-[10px] font-bold text-cyan-200 cursor-pointer">⚙️ URL・現場キー設定</button>
+              <button onclick="refreshMamezuExchangeList()" class="px-2 py-1 bg-sky-800 hover:bg-sky-700 rounded text-[10px] font-bold cursor-pointer">🔄 最新読込</button>
+            </div>
+          </div>
+          <div id="mz-exchange-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-64 overflow-y-auto"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== モーダル2C：📐 写真台帳同等・豆図作成 ＆ 写真直接注釈編集モーダル ==================== -->
   <div id="modal-fn-mamezu" class="fixed inset-0 bg-black/80 backdrop-blur-xs hidden items-center justify-center p-2 sm:p-4 z-50 no-print">
     <div class="bg-slate-900 border border-slate-700 text-white rounded-2xl w-full max-w-3xl max-h-[95dvh] flex flex-col overflow-hidden shadow-2xl text-xs">
@@ -453,7 +512,6 @@
         <button onclick="closeModal('modal-fn-mamezu')" class="text-slate-400 hover:text-white text-lg px-2 cursor-pointer">✕</button>
       </div>
 
-      <!-- 1段目：略図雛形11種 ＆ カメラ/画像/SVG/PNG入出力 -->
       <div class="px-3 py-2 bg-slate-950 border-b border-slate-800 flex flex-wrap items-center justify-between gap-1.5 shrink-0 text-[11px]">
         <div id="fn-mz-preset-bar" class="flex flex-wrap items-center gap-1.5">
           <span class="text-slate-400 font-bold">略図雛形:</span>
@@ -495,7 +553,6 @@
         </div>
       </div>
 
-      <!-- 2段目：Back 背景4種（白紙・ドット・方眼・薄い色＋透明度） -->
       <div id="fn-mz-bg-bar" class="px-3 py-1.5 bg-slate-900 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 shrink-0 text-[11px]">
         <div class="flex flex-wrap items-center gap-1">
           <span class="text-amber-300 font-extrabold">Back:</span>
@@ -517,7 +574,6 @@
         </div>
       </div>
 
-      <!-- 3段目：作図ツール10種 ＆ カラー・戻す・選択削除・全消 -->
       <div class="px-3 py-2 bg-slate-800 border-b border-slate-700 flex flex-wrap items-center justify-between gap-1.5 shrink-0 text-[11px]">
         <div class="flex flex-wrap items-center gap-1">
           <button onclick="setFnMzTool('select')" id="fn-mz-tool-select" class="fn-mz-tool-btn px-2 py-1 rounded bg-slate-700 text-slate-200 font-bold cursor-pointer">👆 選択/移動</button>
@@ -544,7 +600,6 @@
         </div>
       </div>
 
-      <!-- 4段目：角度スナップ（90°/15°）・線種4種・始点/終点各7種・ハッチ4種・文字入力 -->
       <div class="px-3 py-1.5 bg-slate-900 border-b border-slate-800 flex flex-wrap items-center gap-2 text-[11px] shrink-0">
         <div class="inline-flex items-center gap-1 bg-slate-950 border border-amber-600/70 rounded px-1.5 py-0.5">
           <span class="text-amber-300 font-bold">📐 角度:</span>
@@ -607,12 +662,10 @@
         </div>
       </div>
 
-      <!-- 中央キャンバス -->
       <div class="flex-1 overflow-auto bg-slate-700 p-3 flex items-center justify-center">
         <canvas id="fn-mamezu-canvas" width="480" height="280" class="bg-white rounded shadow-xl border-2 border-slate-400 touch-none cursor-crosshair max-w-full h-auto"></canvas>
       </div>
 
-      <!-- フッターボタン -->
       <div class="px-4 py-2.5 bg-slate-950 border-t border-slate-800 flex flex-wrap items-center justify-end gap-2 shrink-0">
         <button onclick="closeModal('modal-fn-mamezu')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold cursor-pointer">キャンセル</button>
         <button id="fn-mz-btn-apply" onclick="saveFnMamezuToSheet(false)" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-extrabold shadow cursor-pointer">
@@ -757,7 +810,7 @@
             <input id="preview-opt-crop" type="checkbox" onchange="toggleCropMarks(this.checked); renderPrintPreviewImage();" class="accent-emerald-500" />
             <span>トンボ</span>
           </label>
-          <label class="inline-flex items-center gap-1 bg-emerald-950/90 px-2.5 py-1 rounded-lg border border-emerald-600 text-emerald-200 cursor-pointer font-bold" title="A4用紙の中に野帳サイズを原寸（100%）のまま配置して自動拡大を防ぎます">
+          <label class="inline-flex items-center gap-1 bg-emerald-950/90 px-2.5 py-1 rounded-lg border border-emerald-600 text-emerald-200 cursor-pointer font-bold">
             <input id="preview-opt-a4" type="checkbox" onchange="togglePdfInA4(this.checked); renderPrintPreviewImage();" class="accent-emerald-500" />
             <span>📄 A4内に原寸配置</span>
           </label>
@@ -795,7 +848,7 @@
   <!-- トースト通知 -->
   <div id="toast" class="no-print hidden fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-900/95 border border-emerald-500/60 text-white text-xs font-bold px-4 py-2 rounded-full shadow-2xl z-50 whitespace-nowrap"></div>
 
-  <!-- 線・矢印・文字ドラッグ中のリアルタイム数値HUD -->
+  <!-- 線・矢印・引き出し線・文字ドラッグ中のリアルタイム数値HUD -->
   <div id="line-drag-hud" class="no-print hidden fixed pointer-events-none z-50 bg-slate-900/95 border border-amber-400/80 text-amber-200 font-mono text-[11px] font-extrabold px-2.5 py-1 rounded-lg shadow-xl whitespace-nowrap"></div>
 
   <script>
@@ -1028,6 +1081,182 @@
       await uploadDataUrlToFnCloud(dataUrl, 'mamezu');
     }
 
+    async function exportSelectedObjectsAsMamezuToCloud() {
+      const p = getCurrentPage();
+      const selIds = getSelectedIdsSet();
+      const targets = p.objects.filter(o => selIds.has(o.id));
+      if (targets.length === 0) {
+        showToast('先に野帳シート上の図形・引き出し線・文字を選択してください');
+        return;
+      }
+
+      const sheetCanvas = await renderCurrentPageToCanvas();
+      const padOffset = p.showCropMarks !== false ? 24 : 0;
+
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      targets.forEach(o => {
+        if (o.type === 'line' || o.type === 'arrow' || o.type === 'leader') {
+          const pts = getLineEndpoints(o);
+          const extraW = o.type === 'leader' ? Math.max(70, (o.text || '確認箇所').length * 14) : 16;
+          minX = Math.min(minX, pts.x1 - 16, pts.x2 - extraW);
+          minY = Math.min(minY, pts.y1 - 24, pts.y2 - 28);
+          maxX = Math.max(maxX, pts.x1 + 16, pts.x2 + extraW);
+          maxY = Math.max(maxY, pts.y1 + 16, pts.y2 + 16);
+        } else {
+          const ow = o.customWidth || o.w || 120;
+          const oh = o.h || 60;
+          minX = Math.min(minX, (o.x || 0) - 10);
+          minY = Math.min(minY, (o.y || 0) - 10);
+          maxX = Math.max(maxX, (o.x || 0) + ow + 10);
+          maxY = Math.max(maxY, (o.y || 0) + oh + 10);
+        }
+      });
+
+      const dim = getSheetDimensions(p);
+      minX = Math.max(0, minX);
+      minY = Math.max(0, minY);
+      maxX = Math.min(dim.pxW, maxX);
+      maxY = Math.min(dim.pxH, maxY);
+      const cropW = Math.max(60, maxX - minX);
+      const cropH = Math.max(40, maxY - minY);
+
+      const outC = document.createElement('canvas');
+      outC.width = 480;
+      outC.height = 280;
+      const octx = outC.getContext('2d');
+      octx.fillStyle = '#ffffff';
+      octx.fillRect(0, 0, 480, 280);
+
+      const scale = Math.min(460 / cropW, 260 / cropH);
+      const dw = cropW * scale;
+      const dh = cropH * scale;
+      octx.drawImage(
+        sheetCanvas,
+        (padOffset + minX) * 2,
+        (padOffset + minY) * 2,
+        cropW * 2,
+        cropH * 2,
+        (480 - dw) / 2,
+        (280 - dh) / 2,
+        dw,
+        dh
+      );
+
+      const dataUrl = outC.toDataURL('image/png');
+      try {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEY_MAMEZU_BRIDGE) || '[]');
+        list.unshift({ id: `fn_sel_${Date.now()}`, title: '野帳選択図形豆図', dataUrl, createdAt: getTodayString() });
+        localStorage.setItem(STORAGE_KEY_MAMEZU_BRIDGE, JSON.stringify(list.slice(0, 30)));
+      } catch (_) {}
+
+      await uploadDataUrlToFnCloud(dataUrl, 'mamezu');
+      await refreshMamezuExchangeList();
+    }
+
+    function openMamezuExchangeModal() {
+      const badge = document.getElementById('mz-ex-conn-badge');
+      if (badge) {
+        const ok = !!(fnCloudConfig.activeUrl && fnCloudConfig.activeSiteKey);
+        badge.textContent = ok ? `🟢 現場キー: ${fnCloudConfig.activeSiteKey}` : '💾 ローカルブリッジ（URL未設定時は端末内共有）';
+        badge.className = ok
+          ? 'px-2 py-0.5 rounded-full bg-emerald-900 text-emerald-200 text-[10px] font-extrabold'
+          : 'px-2 py-0.5 rounded-full bg-slate-900 text-amber-200 text-[10px] font-bold';
+      }
+      openModal('modal-fn-mamezu-exchange');
+      refreshMamezuExchangeList();
+    }
+
+    async function refreshMamezuExchangeList() {
+      const grid = document.getElementById('mz-exchange-grid');
+      if (!grid) return;
+      grid.innerHTML = `<div class="col-span-full text-center text-sky-300 py-4">豆図・写真プールを読み込み中...</div>`;
+
+      const items = [];
+      const rawUrl = (fnCloudConfig.activeUrl || '').trim();
+      const siteKey = (fnCloudConfig.activeSiteKey || '').trim();
+
+      if (rawUrl && siteKey) {
+        try {
+          const res = await fetch(`${rawUrl}/api/media`, { headers: { 'X-Site-Key': siteKey } });
+          const data = await res.json();
+          if (res.ok && data.ok && Array.isArray(data.media)) {
+            data.media.forEach(m => {
+              items.push({
+                id: m.media_id,
+                source: 'cloud',
+                mediaType: m.media_type,
+                title: `${m.media_type === 'mamezu' ? '📐 クラウド豆図' : '📷 台帳写真'} ${m.taken_at || ''}`,
+                url: m.storage_url
+              });
+            });
+          }
+        } catch (_) {}
+      }
+
+      try {
+        const localBridge = JSON.parse(localStorage.getItem(STORAGE_KEY_MAMEZU_BRIDGE) || '[]');
+        localBridge.forEach(b => {
+          items.push({
+            id: b.id,
+            source: 'local',
+            mediaType: 'mamezu',
+            title: `💾 ${b.title || 'ローカル豆図'}`,
+            url: b.dataUrl
+          });
+        });
+      } catch (_) {}
+
+      if (items.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center text-slate-400 py-6">共有されている豆図・写真はまだありません。上のボタンから出力するか、写真台帳側で豆図を出力してください。</div>`;
+        return;
+      }
+
+      grid.innerHTML = items.map(it => `
+        <div class="bg-slate-900 border border-slate-700 rounded-xl p-1.5 flex flex-col gap-1.5">
+          <div class="h-20 bg-white rounded-lg overflow-hidden flex items-center justify-center border border-slate-600">
+            <img src="${escapeHtml(it.url)}" class="w-full h-full object-contain" />
+          </div>
+          <div class="text-[10px] font-bold ${it.mediaType === 'mamezu' ? 'text-emerald-300' : 'text-sky-300'} truncate">${escapeHtml(it.title)}</div>
+          <div class="grid grid-cols-2 gap-1 text-[10px] font-extrabold">
+            <button onclick="insertExternalImageToSheet('${escapeHtml(it.url)}', '${escapeHtml(it.title)}', ${it.mediaType === 'mamezu'}); closeModal('modal-fn-mamezu-exchange');"
+                    class="py-1 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg cursor-pointer">
+              📌 貼付
+            </button>
+            <button onclick="openMamezuUrlInEditor('${escapeHtml(it.url)}', '${it.mediaType === 'mamezu' ? 'mamezu' : 'photo'}')"
+                    class="py-1 bg-cyan-700 hover:bg-cyan-600 text-white rounded-lg cursor-pointer">
+              ✏️ 編集
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function openMamezuUrlInEditor(srcUrl, mode = 'mamezu') {
+      closeModal('modal-fn-mamezu-exchange');
+      openFnMamezuModal(mode);
+      const im = new Image();
+      im.crossOrigin = 'anonymous';
+      im.onload = () => {
+        const ratio = Math.min(440 / im.width, 250 / im.height, 1);
+        const w = Math.round(im.width * ratio);
+        const h = Math.round(im.height * ratio);
+        fnMzState.objects.push({
+          type: 'image',
+          x: Math.round((480 - w) / 2),
+          y: Math.round((280 - h) / 2),
+          w,
+          h,
+          dataUrl: srcUrl,
+          _img: im
+        });
+        fnMzState.selectedIndex = fnMzState.objects.length - 1;
+        fnMzState.tool = 'select';
+        syncFnMzUiControls();
+        renderFnMamezuCanvas();
+      };
+      im.src = srcUrl;
+    }
+
     async function pushFieldnoteToCloud() {
       const rawUrl = (fnCloudConfig.activeUrl || '').trim();
       const siteKey = (fnCloudConfig.activeSiteKey || '').trim();
@@ -1150,7 +1379,7 @@
             <span class="text-[9px] font-bold ${m.media_type === 'mamezu' ? 'text-emerald-300' : 'text-sky-300'} truncate">
               ${m.media_type === 'mamezu' ? '📐 豆図' : '📷 台帳写真'}
             </span>
-            <button onclick="insertExternalImageToSheet('${escapeHtml(m.storage_url)}', '${m.media_type === 'mamezu' ? '共有豆図' : '台帳写真'}'); closeModal('modal-fn-cloud');"
+            <button onclick="insertExternalImageToSheet('${escapeHtml(m.storage_url)}', '${m.media_type === 'mamezu' ? '共有豆図' : '台帳写真'}', ${m.media_type === 'mamezu'}); closeModal('modal-fn-cloud');"
                     class="py-1 bg-cyan-700 hover:bg-cyan-600 text-white rounded text-[10px] font-bold cursor-pointer">
               ＋ 野帳へ貼付
             </button>
@@ -1161,20 +1390,20 @@
       }
     }
 
-    function insertExternalImageToSheet(src, title = '貼付画像') {
+    function insertExternalImageToSheet(src, title = '貼付画像', asMamezu = false) {
       const p = getCurrentPage();
       const id = 'obj_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5);
       p.objects.push({
         id,
-        type: 'image',
+        type: asMamezu ? 'mamezu' : 'image',
         title,
         src,
         x: 60,
         y: 72,
-        w: 220,
-        h: 135,
-        baseW: 220,
-        baseH: 135,
+        w: 240,
+        h: 140,
+        baseW: 240,
+        baseH: 140,
         scalePct: 100,
         rotation: 0,
         cropTop: 0,
@@ -1311,8 +1540,9 @@
       }
     }
 
-    // 用紙規格定義（mm単位）
+    // 用紙規格定義（mm単位・豆図84×49追加）
     const PAPER_STANDARDS = {
+      mamezu: { id: 'mamezu', label: '📐 豆図(84×49)',   w: 49,  h: 84 },
       yaecho: { id: 'yaecho', label: '📓 紙野帳(91×165)', w: 91,  h: 165 },
       a6:     { id: 'a6',     label: '📘 A6(105×148)',    w: 105, h: 148 },
       a5:     { id: 'a5',     label: '📗 A5(148×210)',    w: 148, h: 210 },
@@ -1404,7 +1634,7 @@
 
     function getSheetDimensions(page) {
       const std = PAPER_STANDARDS[page.paperSize] || PAPER_STANDARDS.yaecho;
-      const ori = PAPER_ORIENTATIONS[page.orientation] ? page.orientation : 'spread-v';
+      const ori = PAPER_ORIENTATIONS[page.orientation] ? page.orientation : (page.paperSize === 'mamezu' ? 'single-h' : 'spread-v');
       let mmW = std.w;
       let mmH = std.h;
       if (ori === 'single-h') {
@@ -1424,7 +1654,7 @@
         mmH = Math.round(std.h / 2);
       }
 
-      const rawScale = 3.5;
+      const rawScale = page.paperSize === 'mamezu' ? 6.0 : 3.5;
       const maxDim = Math.max(mmW * rawScale, mmH * rawScale);
       const clampFactor = maxDim > 960 ? (960 / maxDim) : 1;
       const pxW = Math.round(mmW * rawScale * clampFactor);
@@ -1542,6 +1772,17 @@
 
     function setLineFromAngleOrLength(obj, newAngleDeg, newLength) {
       const pts = getLineEndpoints(obj);
+      if (obj.type === 'leader') {
+        const curLen = Math.max(24, Math.hypot(pts.x2 - pts.x1, pts.y2 - pts.y1));
+        const curDeg = (Math.atan2(pts.y2 - pts.y1, pts.x2 - pts.x1) * 180) / Math.PI;
+        const len = typeof newLength === 'number' ? Math.max(24, newLength) : curLen;
+        const deg = typeof newAngleDeg === 'number' ? newAngleDeg : curDeg;
+        const rad = (deg * Math.PI) / 180;
+        obj.x2 = Math.round(pts.x1 + Math.cos(rad) * len);
+        obj.y2 = Math.round(pts.y1 + Math.sin(rad) * len);
+        obj.angleDeg = Math.round((deg + 360) % 360);
+        return;
+      }
       const cx = (pts.x1 + pts.x2) / 2;
       const cy = (pts.y1 + pts.y2) / 2;
       const curLen = Math.max(24, Math.hypot(pts.x2 - pts.x1, pts.y2 - pts.y1));
@@ -1691,7 +1932,7 @@
       return nb;
     }
 
-    // ==================== アプリ全体状態（複数ノート対応 ＋ UI一時状態） ====================
+    // ==================== アプリ全体状態 ====================
     let appState = {
       notebooks: [createDefaultNotebook('現場測量・記録野帳', 'yaecho')],
       currentNotebookIndex: 0,
@@ -1842,7 +2083,7 @@
       if (targets.length === 0) return;
 
       targets.forEach(o => {
-        if (o.type === 'line' || o.type === 'arrow') {
+        if (o.type === 'line' || o.type === 'arrow' || o.type === 'leader') {
           const pts = getLineEndpoints(o);
           const cx = (pts.x1 + pts.x2) / 2;
           const cy = (pts.y1 + pts.y2) / 2;
@@ -1850,6 +2091,9 @@
           o.y1 = Math.round(cy + (pts.y1 - cy) * factor);
           o.x2 = Math.round(cx + (pts.x2 - cx) * factor);
           o.y2 = Math.round(cy + (pts.y2 - cy) * factor);
+          if (o.type === 'leader') {
+            o.fontSize = Math.max(10, Math.min(36, Math.round((o.fontSize || 13) * factor)));
+          }
         } else if (o.type === 'text') {
           o.fontSize = Math.max(10, Math.min(72, Math.round((o.fontSize || 16) * factor)));
           if (o.customWidth) o.customWidth = Math.max(48, Math.round(o.customWidth * factor));
@@ -1968,8 +2212,7 @@
                 <input type="text"
                        value="${escapeHtml(nb.name)}"
                        onchange="renameNotebookAt(${idx}, this.value)"
-                       class="w-full bg-transparent font-extrabold text-white text-xs sm:text-sm outline-none border-b border-transparent focus:border-emerald-400 truncate"
-                       title="タップしてノート名を変更" />
+                       class="w-full bg-transparent font-extrabold text-white text-xs sm:text-sm outline-none border-b border-transparent focus:border-emerald-400 truncate" />
                 <div class="text-[10px] text-slate-400">全 ${nb.pages.length} ページ ／ 更新: ${updatedStr}</div>
               </div>
             </div>
@@ -1977,8 +2220,8 @@
               <button onclick="switchNotebook(${idx})" class="px-2.5 py-1.5 ${active ? 'bg-emerald-600' : 'bg-blue-600 hover:bg-blue-500'} rounded-lg font-bold cursor-pointer">
                 ${active ? '使用中' : '開く'}
               </button>
-              <button onclick="duplicateNotebookAt(${idx})" class="px-2 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg font-bold cursor-pointer" title="ノートを複製">複製</button>
-              ${appState.notebooks.length > 1 ? `<button onclick="deleteNotebookAt(${idx})" class="px-2 py-1.5 bg-rose-900 hover:bg-rose-700 rounded-lg font-bold cursor-pointer" title="ノートを削除">削除</button>` : ''}
+              <button onclick="duplicateNotebookAt(${idx})" class="px-2 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg font-bold cursor-pointer">複製</button>
+              ${appState.notebooks.length > 1 ? `<button onclick="deleteNotebookAt(${idx})" class="px-2 py-1.5 bg-rose-900 hover:bg-rose-700 rounded-lg font-bold cursor-pointer">削除</button>` : ''}
             </div>
           </div>
         `;
@@ -2100,6 +2343,14 @@
         newPage.bgStyle = cur.bgStyle;
         newPage.showCropMarks = cur.showCropMarks;
         newPage.printIncludeBg = cur.printIncludeBg;
+        if (cur.paperSize === 'mamezu') {
+          newPage.showTitle = false;
+          newPage.meta.showDate = false;
+          newPage.meta.showWeather = false;
+          newPage.meta.showStaff = false;
+          newPage.memo.html = '';
+          newPage.memo.text = '';
+        }
       }
       nb.pages.push(newPage);
       nb.currentPageIndex = nb.pages.length - 1;
@@ -2125,7 +2376,7 @@
         return `
           <div class="p-2.5 rounded-xl border ${active ? 'bg-emerald-950/60 border-emerald-500' : 'bg-slate-800 border-slate-700'} flex items-center justify-between gap-2">
             <button onclick="jumpToPage(${idx})" class="flex-1 text-left min-w-0 cursor-pointer">
-              <div class="font-extrabold text-white truncate">${idx + 1}. ${escapeHtml(pg.title || '無題ページ')}</div>
+              <div class="font-extrabold text-white truncate">${idx + 1}. ${escapeHtml(pg.title || (pg.paperSize === 'mamezu' ? '豆図シート' : '無題ページ'))}</div>
               <div class="text-[10px] text-slate-400">${dim.badgeText}</div>
             </button>
             <div class="flex items-center gap-1 shrink-0">
@@ -2253,7 +2504,7 @@
               </div>
               <div class="flex items-center gap-1 shrink-0">
                 <button onclick="restoreFromArchiveVault('${item.id}')" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-bold cursor-pointer">復元</button>
-                <button onclick="downloadArchiveSingleJson('${item.id}')" class="px-2 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg font-bold cursor-pointer" title="単体JSONファイルを保存">JSON</button>
+                <button onclick="downloadArchiveSingleJson('${item.id}')" class="px-2 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg font-bold cursor-pointer">JSON</button>
               </div>
             </div>
           `;
@@ -2289,10 +2540,26 @@
       showToast('単体JSONファイルを保存しました');
     }
 
-    // ==================== 用紙・向き・背景・タイトル・出力設定 ====================
+    // ==================== 用紙・向き・背景・タイトル・出力設定（豆図84×49最適化対応） ====================
     function setPaperSize(sizeId) {
       const p = getCurrentPage();
+      const prevSize = p.paperSize;
       p.paperSize = sizeId;
+      if (sizeId === 'mamezu') {
+        p.orientation = 'single-h';
+        p.composeMode = 'memo-only';
+        p.showTitle = false;
+        p.meta.showDate = false;
+        p.meta.showWeather = false;
+        p.meta.showStaff = false;
+        if (!p.bgStyle || p.bgStyle === 'ruled') p.bgStyle = 'grid-white';
+        showToast('📐 豆図サイズ（84×49mm / 12:7比率）に切り替えました。図形・引き出し線・文字で自由に作図できます');
+      } else if (prevSize === 'mamezu') {
+        p.orientation = sizeId === 'yaecho' ? 'spread-v' : 'single-v';
+        p.showTitle = p.titlePreset !== 'blank';
+        p.meta.showDate = true;
+        p.meta.showWeather = true;
+      }
       saveProjectToLocal();
       renderAll();
     }
@@ -2423,7 +2690,7 @@
     function applyTextFormat(cmd, value = null) {
       const p = getCurrentPage();
       const selObj = getSelectedObject();
-      if (selObj && selObj.type === 'text') {
+      if (selObj && (selObj.type === 'text' || selObj.type === 'leader')) {
         if (cmd === 'foreColor') selObj.color = value;
         if (cmd === 'bold') selObj.bold = selObj.bold === false ? true : false;
         if (cmd === 'underline') selObj.underline = !selObj.underline;
@@ -2466,7 +2733,7 @@
       renderDrawer();
     }
 
-    // ==================== 表操作・数式（関数＆四則演算）・書式・CSV ====================
+    // ==================== 表操作・数式・書式・CSV ====================
     function colIndexToLetters(idx) {
       let s = '';
       let n = idx + 1;
@@ -3050,7 +3317,7 @@
       showToast('CSVファイルを保存しました');
     }
 
-    // ==================== 図形・スタンプ・カスタムスタンプ・移動文字追加 ====================
+    // ==================== 図形・引き出し線・スタンプ・移動文字追加 ====================
     function addShapeObject(shapeType) {
       const p = getCurrentPage();
       const id = 'obj_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5);
@@ -3075,6 +3342,16 @@
         obj.y2 = 120;
         obj.w = 180;
         obj.h = 36;
+      } else if (shapeType === 'leader') {
+        obj.x1 = 110;
+        obj.y1 = 140;
+        obj.x2 = 175;
+        obj.y2 = 95;
+        obj.text = '確認箇所';
+        obj.fontSize = 13;
+        obj.bgWhite = true;
+        obj.startArrow = 'dot';
+        obj.endArrow = 'none';
       } else if (shapeType === 'circle') {
         obj.w = 96;
         obj.h = 96;
@@ -3090,6 +3367,9 @@
       uiState.editingTextObjId = null;
       saveProjectToLocal();
       renderAll();
+      if (shapeType === 'leader') {
+        showToast('🏷️ 引き出し線を配置しました（青丸＝先端／赤丸＝折れ点／ダブルクリックで文字編集）');
+      }
     }
 
     function addDateStampObject(stampStyle = 'round') {
@@ -3221,6 +3501,20 @@
 
     function enterTextObjectEditMode(objId) {
       hideContextMenu();
+      const obj = getCurrentPage().objects.find(o => o.id === objId);
+      if (!obj) return;
+      if (obj.type === 'leader') {
+        selectSingleObject(objId);
+        setActiveTab('draw');
+        requestAnimationFrame(() => {
+          const inp = document.getElementById('sheet-leader-text-input');
+          if (inp) {
+            inp.focus();
+            inp.select();
+          }
+        });
+        return;
+      }
       selectSingleObject(objId);
       uiState.editingTextObjId = objId;
       uiState.editingCell = null;
@@ -3306,7 +3600,7 @@
       showToast(ids.size > 1 ? `${ids.size}個の選択要素を削除しました` : '選択要素を削除しました');
     }
 
-    // ==================== 画像・PDFファイル貼付（カメラ撮影・リサイズ・Worker回避・複数頁対応） ====================
+    // ==================== 画像・PDFファイル貼付 ====================
     const pdfDocumentCache = new Map();
 
     function compressAndResizeImageFile(file, maxSide = 1280, quality = 0.86) {
@@ -3497,12 +3791,12 @@
 
       const p = getCurrentPage();
       const targetObj = kind === 'object' ? p.objects.find(o => o.id === targetId) : null;
-      const isText = targetObj && targetObj.type === 'text';
+      const isText = targetObj && (targetObj.type === 'text' || targetObj.type === 'leader');
       const isEditableMedia = targetObj && (targetObj.type === 'image' || targetObj.type === 'mamezu');
       const selSet = getSelectedIdsSet();
       const hasGroup = Array.from(selSet).some(id => p.objects.find(o => o.id === id)?.groupId);
 
-      if (hdr) hdr.textContent = kind === 'table' ? '表の操作メニュー' : (isText ? '移動文字の操作（再タップで文字編集）' : '要素の操作メニュー');
+      if (hdr) hdr.textContent = kind === 'table' ? '表の操作メニュー' : (isText ? '文字・引き出し線の操作' : '要素の操作メニュー');
       if (btnEditText) btnEditText.classList.toggle('hidden', !isText);
       if (btnEditPhoto) btnEditPhoto.classList.toggle('hidden', !isEditableMedia);
       if (btnGroup) btnGroup.classList.toggle('hidden', selSet.size < 2);
@@ -3630,7 +3924,7 @@
       hideContextMenu();
     }
 
-    // ==================== ポインタードラッグ移動・ハンドル変形（グループ連動移動＆90°/15°スナップ） ====================
+    // ==================== ポインタードラッグ移動・ハンドル変形 ====================
     let activeDragState = null;
     let longPressTimer = null;
 
@@ -3820,7 +4114,7 @@
             domEl: document.querySelector(`[data-obj-id="${mid}"]`),
             origX: mObj.x || 0,
             origY: mObj.y || 0,
-            origPts: (mObj.type === 'line' || mObj.type === 'arrow') ? getLineEndpoints(mObj) : null
+            origPts: (mObj.type === 'line' || mObj.type === 'arrow' || mObj.type === 'leader') ? getLineEndpoints(mObj) : null
           };
         }).filter(Boolean);
 
@@ -3865,7 +4159,7 @@
         activeDragState.groupOrigins.forEach(item => {
           const obj = p.objects.find(o => o.id === item.id);
           if (!obj) return;
-          if ((obj.type === 'line' || obj.type === 'arrow') && item.origPts) {
+          if ((obj.type === 'line' || obj.type === 'arrow' || obj.type === 'leader') && item.origPts) {
             obj.x1 = Math.round(item.origPts.x1 + dx);
             obj.y1 = Math.round(item.origPts.y1 + dy);
             obj.x2 = Math.round(item.origPts.x2 + dx);
@@ -4053,7 +4347,7 @@
       }
     });
 
-    // ==================== SVG図形・日時スタンプ・表・シート描画 ====================
+    // ==================== SVG図形・引き出し線・日時スタンプ・表・シート描画 ====================
     let pendingRafUpdate = null;
 
     function scheduleFastObjectUpdate(domEl, obj) {
@@ -4063,6 +4357,51 @@
         pendingRafUpdate = null;
         updateObjectDomFast(domEl, obj);
       });
+    }
+
+    function buildLeaderGeometry(obj) {
+      const { x1, y1, x2, y2 } = getLineEndpoints(obj);
+      const dir = x2 >= x1 ? 1 : -1;
+      const fSize = Number(obj.fontSize) || 13;
+      const txt = String(obj.text || '確認箇所');
+      const shelfW = Math.max(58, txt.length * (fSize * 0.92) + 12);
+      const x3 = x2 + dir * shelfW;
+      const minX = Math.min(x1, x2, x3) - 18;
+      const minY = Math.min(y1, y2 - fSize - 10) - 14;
+      const maxX = Math.max(x1, x2, x3) + 18;
+      const maxY = Math.max(y1, y2) + 18;
+      return {
+        x1, y1, x2, y2, x3, dir, fSize, txt, shelfW,
+        minX, minY,
+        w: Math.max(48, maxX - minX),
+        h: Math.max(36, maxY - minY)
+      };
+    }
+
+    function buildLeaderInnerSvg(obj, g) {
+      const lx1 = g.x1 - g.minX;
+      const ly1 = g.y1 - g.minY;
+      const lx2 = g.x2 - g.minX;
+      const ly2 = g.y2 - g.minY;
+      const lx3 = g.x3 - g.minX;
+      const col = obj.color || '#dc2626';
+      const sw = obj.strokeWidth || 2.2;
+      const ang = Math.atan2(ly2 - ly1, lx2 - lx1);
+      const dashAttr = getStrokeDashAttr(obj.lineStyle, sw);
+
+      let svg = `<polyline points="${lx1},${ly1} ${lx2},${ly2} ${lx3},${ly2}" fill="none" stroke="rgba(0,0,0,0.001)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>`;
+      svg += `<polyline points="${lx1},${ly1} ${lx2},${ly2} ${lx3},${ly2}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" ${dashAttr}/>`;
+      svg += buildArrowHeadSvg(obj.startArrow || 'dot', lx1, ly1, ang + Math.PI, col, sw);
+
+      const textX = g.dir > 0 ? (lx2 + 4) : (lx2 - 4);
+      const textY = ly2 - 5;
+      const anchor = g.dir > 0 ? 'start' : 'end';
+      if (obj.bgWhite !== false) {
+        const bgX = g.dir > 0 ? lx2 + 1 : lx3;
+        svg += `<rect x="${bgX}" y="${ly2 - g.fSize - 6}" width="${g.shelfW - 2}" height="${g.fSize + 4}" rx="3" fill="rgba(255,255,255,0.92)"/>`;
+      }
+      svg += `<text x="${textX}" y="${textY}" text-anchor="${anchor}" font-size="${g.fSize}" font-weight="800" fill="${col}">${escapeHtml(g.txt)}</text>`;
+      return { svg, lx1, ly1, lx2, ly2 };
     }
 
     function buildShapeInnerSvg(obj, w, h) {
@@ -4209,6 +4548,31 @@
 
     function updateObjectDomFast(domEl, obj) {
       if (!domEl || !obj) return;
+      if (obj.type === 'leader') {
+        const g = buildLeaderGeometry(obj);
+        const built = buildLeaderInnerSvg(obj, g);
+        domEl.style.left = `${g.minX}px`;
+        domEl.style.top = `${g.minY}px`;
+        domEl.style.width = `${g.w}px`;
+        domEl.style.height = `${g.h}px`;
+        const svgEl = domEl.querySelector('svg');
+        if (svgEl) {
+          svgEl.setAttribute('viewBox', `0 0 ${g.w} ${g.h}`);
+          svgEl.innerHTML = built.svg;
+        }
+        const startH = domEl.querySelector('[data-line-handle="start"]');
+        const endH = domEl.querySelector('[data-line-handle="end"]');
+        if (startH) {
+          startH.style.left = `${built.lx1 - 10}px`;
+          startH.style.top = `${built.ly1 - 10}px`;
+        }
+        if (endH) {
+          endH.style.left = `${built.lx2 - 10}px`;
+          endH.style.top = `${built.ly2 - 10}px`;
+        }
+        return;
+      }
+
       if (obj.type === 'line' || obj.type === 'arrow') {
         const { x1, y1, x2, y2 } = getLineEndpoints(obj);
         const minX = Math.min(x1, x2) - 16;
@@ -4358,6 +4722,24 @@
       const groupBadge = (isPrimarySel && obj.groupId)
         ? `<span class="no-print pointer-events-none absolute -top-5 left-0 px-1.5 py-0.2 rounded bg-amber-500 text-slate-950 text-[9px] font-black shadow">🔗グループ</span>`
         : '';
+
+      if (obj.type === 'leader') {
+        const g = buildLeaderGeometry(obj);
+        const built = buildLeaderInnerSvg(obj, g);
+        return `
+          <div data-drag-kind="object" data-drag-id="${obj.id}" data-obj-id="${obj.id}"
+               ondblclick="event.stopPropagation(); enterTextObjectEditMode('${obj.id}');"
+               style="left:${g.minX}px; top:${g.minY}px; width:${g.w}px; height:${g.h}px;"
+               class="touch-none absolute z-30 cursor-move ${isPrimarySel ? 'outline-1 outline-dashed outline-blue-400' : (isGroupMemberSel ? 'outline-1 outline-dashed outline-amber-400' : '')}">
+            ${groupBadge}
+            <svg viewBox="0 0 ${g.w} ${g.h}" class="w-full h-full overflow-visible pointer-events-none">${built.svg}</svg>
+            ${isPrimarySel ? `
+              <div data-line-handle="start" data-obj-id="${obj.id}" style="left:${built.lx1 - 10}px; top:${built.ly1 - 10}px;" class="no-print touch-none absolute w-5 h-5 rounded-full bg-blue-600 border-2 border-white shadow-md cursor-grab z-40" title="先端ハンドル（指し示す位置）"></div>
+              <div data-line-handle="end" data-obj-id="${obj.id}" style="left:${built.lx2 - 10}px; top:${built.ly2 - 10}px;" class="no-print touch-none absolute w-5 h-5 rounded-full bg-rose-600 border-2 border-white shadow-md cursor-grab z-40" title="折れ点ハンドル（ラベル棚位置）"></div>
+            ` : ''}
+          </div>
+        `;
+      }
 
       if (obj.type === 'date-stamp') {
         const w = obj.w || 92;
@@ -4675,7 +5057,7 @@
              class="inline-block bg-white/95 rounded shadow-sm ${isSel ? 'ring-2 ring-blue-500/80' : ''}">
           <div data-table-handle-bar="${tbl.id}" class="no-print ${isSel ? 'flex' : 'hidden'} items-center justify-between gap-1 bg-slate-900/95 text-white px-2 py-0.5 text-[10px] font-bold rounded-t">
             <span data-drag-kind="table" data-drag-id="${tbl.id}" class="cursor-move touch-none text-amber-300">✥ 移動 / 操作</span>
-            <button onclick="event.stopPropagation(); showContextMenuAt(event.clientX, event.clientY, 'table', '${tbl.id}');" class="px-1.5 py-0.2 bg-slate-700 hover:bg-slate-600 rounded">▾</button>
+            <button onclick="event.stopPropagation(); showContextMenuAt(event.clientX, event.clientY, 'table', '${tbl.id}');" class="px-1.5 py-0.2 bg-slate-700 hover:bg-slate-600 rounded cursor-pointer">▾</button>
           </div>
           ${hasTitle ? `
             <div style="background:${tbl.titleBg || '#2563eb'};" class="px-2 py-1 text-white text-[11px] font-extrabold">
@@ -4721,7 +5103,7 @@
           <path d="M ${p - len} ${h - p} H ${p - g} V ${h - p + len} M ${p - len} ${h - p + g} H ${p} V ${h - p + len}" fill="none" stroke="#0f172a" stroke-width="1"/>
           <path d="M ${w - p + len} ${h - p} H ${w - p + g} V ${h - p + len} M ${w - p + len} ${h - p + g} H ${w - p} V ${h - p + len}" fill="none" stroke="#0f172a" stroke-width="1"/>
           ${centerMarks}
-          <text x="${w / 2}" y="13" text-anchor="middle" font-size="9" font-weight="bold" fill="#334155">✂️ 切り取りトンボ（${dim.mmW}×${dim.mmH}mm / 左端のりしろ5mm）</text>
+          <text x="${w / 2}" y="13" text-anchor="middle" font-size="9" font-weight="bold" fill="#334155">✂️ 切り取りトンボ（${dim.mmW}×${dim.mmH}mm）</text>
         </svg>
       `;
     }
@@ -4752,7 +5134,8 @@
       }
       document.body.classList.toggle('print-exclude-bg', p.printIncludeBg === false);
 
-      sheet.className = `bg-pat-${p.bgStyle || 'yaecho-green'} border ${dim.isHalf ? 'border-dashed border-2 border-emerald-600' : 'border-slate-300'} shadow-2xl p-5 flex flex-col relative overflow-hidden text-slate-900`;
+      const sheetPaddingCls = p.paperSize === 'mamezu' ? 'p-3' : 'p-5';
+      sheet.className = `bg-pat-${p.bgStyle || 'yaecho-green'} border ${dim.isHalf ? 'border-dashed border-2 border-emerald-600' : 'border-slate-300'} shadow-2xl ${sheetPaddingCls} flex flex-col relative overflow-hidden text-slate-900`;
       sheet.style.width = `${dim.pxW}px`;
       sheet.style.minHeight = `${dim.pxH}px`;
 
@@ -4774,11 +5157,14 @@
         </div>
       ` : '';
 
+      const memoPlaceholder = p.paperSize === 'mamezu'
+        ? '豆図用キャンバス（84×49mm / 12:7比率）：下の「図形・印」から図形・引き出し線・文字を配置するか、直接メモを入力...'
+        : 'ここをタップして現場メモ・測量数値を直接入力...';
       const memoStyle = `color:${p.memo.color || '#0f172a'}; font-size:${p.memo.fontSize || 14}px; font-weight:${p.memo.bold ? '700' : '500'}; text-decoration:${p.memo.doubleUnderline ? 'underline double' : (p.memo.underline ? 'underline' : 'none')};`;
       const memoEditorHtml = `
         <div id="memo-rich-editor"
              contenteditable="true"
-             data-placeholder="ここをタップして現場メモ・測量数値を直接入力..."
+             data-placeholder="${memoPlaceholder}"
              onkeyup="captureMemoSelection(); syncMemoFromDom();"
              onmouseup="captureMemoSelection();"
              onblur="syncMemoFromDom();"
@@ -4856,7 +5242,8 @@
         const selObj = getSelectedObject();
         const selSet = getSelectedIdsSet();
         const isTextObj = selObj && selObj.type === 'text';
-        const activeColor = isTextObj ? (selObj.color || '#dc2626') : (p.memo.color || '#0f172a');
+        const isLeaderObj = selObj && selObj.type === 'leader';
+        const activeColor = (isTextObj || isLeaderObj) ? (selObj.color || '#dc2626') : (p.memo.color || '#0f172a');
         const hasGroup = Array.from(selSet).some(id => p.objects.find(o => o.id === id)?.groupId);
 
         box.innerHTML = `
@@ -4866,6 +5253,7 @@
             <button onclick="insertBulletItem('dot')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-bold cursor-pointer">・中黒</button>
             <button onclick="insertBulletItem('star')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-bold cursor-pointer">★印</button>
             <button onclick="addFloatingTextObject()" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-600 rounded-lg font-bold cursor-pointer">T+ 移動文字</button>
+            <button onclick="addShapeObject('leader')" class="px-2.5 py-1 bg-sky-700 hover:bg-sky-600 rounded-lg font-bold cursor-pointer">🏷️ 引き出し線</button>
             ${isTextObj ? `
               <button onclick="enterTextObjectEditMode('${selObj.id}')" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 rounded-lg font-extrabold text-white shadow-xs cursor-pointer">✏️ 文字編集</button>
             ` : ''}
@@ -4876,7 +5264,7 @@
             ${selSet.size >= 2 ? `<button onclick="groupSelectedObjects()" class="px-2 py-1 bg-amber-600 hover:bg-amber-500 rounded-lg font-extrabold text-white cursor-pointer">🔗 グループ化(${selSet.size})</button>` : ''}
             ${hasGroup ? `<button onclick="ungroupSelectedObjects()" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-amber-500/60 text-amber-200 rounded-lg font-bold cursor-pointer">🔓 解除</button>` : ''}
             <span class="text-slate-700">|</span>
-            <span class="${isTextObj ? 'text-amber-300' : 'text-slate-400'} font-bold text-[10px]">${isTextObj ? '移動文字色:' : '文字装飾:'}</span>
+            <span class="${(isTextObj || isLeaderObj) ? 'text-amber-300' : 'text-slate-400'} font-bold text-[10px]">${(isTextObj || isLeaderObj) ? '選択要素色:' : '文字装飾:'}</span>
             ${['#0f172a', '#dc2626', '#2563eb', '#059669', '#d97706', '#7c3aed'].map(c => `
               <button onclick="applyTextFormat('foreColor', '${c}')" style="background:${c};" class="w-6 h-6 rounded-full border-2 border-white shadow cursor-pointer"></button>
             `).join('')}
@@ -4886,7 +5274,7 @@
             <button onclick="applyTextFormat('doubleUnderline')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-bold cursor-pointer" style="text-decoration:underline double;">二重線</button>
             ${isTextObj ? `
               <span class="text-slate-700">|</span>
-              <select onchange="updateSelectedObjProp('boxStyle', this.value)" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 font-bold text-amber-200 cursor-pointer" title="移動文字の囲いスタイル">
+              <select onchange="updateSelectedObjProp('boxStyle', this.value)" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 font-bold text-amber-200 cursor-pointer">
                 ${(() => {
                   const curBs = selObj.boxStyle || (selObj.bgWhite === false ? 'none' : 'card');
                   return `
@@ -4967,39 +5355,39 @@
             ${tbl ? `
               <div class="flex flex-wrap items-center gap-1.5 bg-slate-900 p-1.5 rounded-lg border border-slate-800">
                 <span class="px-1.5 py-0.5 bg-indigo-950 border border-indigo-700 text-indigo-300 font-mono font-bold rounded">${curCellCoord}</span>
-                <button onclick="toggleSelectedCellMultiline()" class="px-2 py-0.5 rounded border font-bold cursor-pointer ${curCell?.multiline ? 'bg-amber-600 border-amber-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'}" title="セル内の複数行改行入力を切り替え（Enterで改行）">↩️ 複数行</button>
-                <div class="inline-flex rounded border border-slate-700 overflow-hidden font-bold" title="水平方向の文字揃え">
+                <button onclick="toggleSelectedCellMultiline()" class="px-2 py-0.5 rounded border font-bold cursor-pointer ${curCell?.multiline ? 'bg-amber-600 border-amber-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'}">↩️ 複数行</button>
+                <div class="inline-flex rounded border border-slate-700 overflow-hidden font-bold">
                   <button onclick="setSelectedCellStyle('align', 'left')" class="px-1.5 py-0.5 cursor-pointer ${curCellAlign === 'left' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">左揃え</button>
                   <button onclick="setSelectedCellStyle('align', 'center')" class="px-1.5 py-0.5 border-x border-slate-700 cursor-pointer ${curCellAlign === 'center' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">中央</button>
                   <button onclick="setSelectedCellStyle('align', 'right')" class="px-1.5 py-0.5 cursor-pointer ${curCellAlign === 'right' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">右揃え</button>
                 </div>
-                <div class="inline-flex rounded border border-slate-700 overflow-hidden font-bold" title="垂直方向の文字揃え（行の高さを広げると効果的です）">
+                <div class="inline-flex rounded border border-slate-700 overflow-hidden font-bold">
                   <button onclick="setSelectedCellStyle('valign', 'top')" class="px-1.5 py-0.5 cursor-pointer ${curCellValign === 'top' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">上揃え</button>
                   <button onclick="setSelectedCellStyle('valign', 'middle')" class="px-1.5 py-0.5 border-x border-slate-700 cursor-pointer ${curCellValign === 'middle' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">真ん中</button>
                   <button onclick="setSelectedCellStyle('valign', 'bottom')" class="px-1.5 py-0.5 cursor-pointer ${curCellValign === 'bottom' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">下揃え</button>
                 </div>
-                <label class="inline-flex items-center gap-1 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 cursor-pointer" title="選択中セルの背景色">
+                <label class="inline-flex items-center gap-1 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 cursor-pointer">
                   <span>セル色</span>
                   <input type="color" value="${curCellBg}" onchange="setSelectedCellStyle('bg', this.value)" class="w-4 h-4 bg-transparent border-0 cursor-pointer" />
                 </label>
-                <label class="inline-flex items-center gap-1 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 cursor-pointer" title="選択中セルの文字色">
+                <label class="inline-flex items-center gap-1 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 cursor-pointer">
                   <span>文字色</span>
                   <input type="color" value="${curCellColor}" onchange="setSelectedCellStyle('color', this.value)" class="w-4 h-4 bg-transparent border-0 cursor-pointer" />
                 </label>
-                <select onchange="setSelectedCellStyle('hatch', this.value)" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 font-bold text-slate-200" title="選択セルの網掛けパターン">
+                <select onchange="setSelectedCellStyle('hatch', this.value)" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 font-bold text-slate-200">
                   <option value="none" ${curCellHatch === 'none' ? 'selected' : ''}>網掛け: なし</option>
                   <option value="diag" ${curCellHatch === 'diag' ? 'selected' : ''}>網掛け: ╱ 斜線</option>
                   <option value="cross" ${curCellHatch === 'cross' ? 'selected' : ''}>網掛け: ╳ クロス</option>
                   <option value="grid" ${curCellHatch === 'grid' ? 'selected' : ''}>網掛け: ┼ 格子</option>
                   <option value="dots" ${curCellHatch === 'dots' ? 'selected' : ''}>網掛け: ⠿ ドット</option>
                 </select>
-                <button onclick="resetSelectedCellColors()" class="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-slate-300 cursor-pointer" title="選択セルの色と網掛けを標準に戻す">セル標準</button>
+                <button onclick="resetSelectedCellColors()" class="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-slate-300 cursor-pointer">セル標準</button>
                 <span class="text-slate-700">|</span>
-                <label class="inline-flex items-center gap-1 bg-emerald-950/70 px-1.5 py-0.5 rounded border border-emerald-700/70 cursor-pointer text-emerald-200" title="表の先頭行（1行目）の背景色">
+                <label class="inline-flex items-center gap-1 bg-emerald-950/70 px-1.5 py-0.5 rounded border border-emerald-700/70 cursor-pointer text-emerald-200">
                   <span>先頭行背景</span>
                   <input type="color" value="${tbl.headerBg || '#ecfdf5'}" onchange="setSelectedTableHeaderStyle('headerBg', this.value)" class="w-4 h-4 bg-transparent border-0 cursor-pointer" />
                 </label>
-                <label class="inline-flex items-center gap-1 bg-emerald-950/70 px-1.5 py-0.5 rounded border border-emerald-700/70 cursor-pointer text-emerald-200" title="表の先頭行（1行目）の文字色">
+                <label class="inline-flex items-center gap-1 bg-emerald-950/70 px-1.5 py-0.5 rounded border border-emerald-700/70 cursor-pointer text-emerald-200">
                   <span>先頭行文字</span>
                   <input type="color" value="${tbl.headerTextColor || '#0f172a'}" onchange="setSelectedTableHeaderStyle('headerTextColor', this.value)" class="w-4 h-4 bg-transparent border-0 cursor-pointer" />
                 </label>
@@ -5101,8 +5489,8 @@
               <button type="button" onclick="openFnMamezuModal('mamezu')" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-extrabold text-white shadow-xs cursor-pointer">
                 📐 豆図作成
               </button>
-              <button type="button" onclick="openFnCloudSyncModal()" class="px-2.5 py-1.5 bg-cyan-700 hover:bg-cyan-600 rounded-lg font-bold text-white cursor-pointer">
-                ☁️ 写真台帳の写真・豆図
+              <button type="button" onclick="openMamezuExchangeModal()" class="px-2.5 py-1.5 bg-sky-700 hover:bg-sky-600 rounded-lg font-extrabold text-white shadow-xs cursor-pointer">
+                🔄 豆図やりとり(入出力)
               </button>
               ${isMedia ? `
                 ${!isPdfObj ? `<button type="button" onclick="openFnMamezuModal(getSelectedObject().type==='mamezu'?'mamezu':'photo', getSelectedObject())" class="px-2.5 py-1.5 bg-amber-600 hover:bg-amber-500 rounded-lg font-extrabold text-white cursor-pointer">✏️ 注釈/豆図編集</button>` : ''}
@@ -5136,6 +5524,7 @@
         const obj = getSelectedObject();
         const selSet = getSelectedIdsSet();
         const hasGroup = Array.from(selSet).some(id => p.objects.find(o => o.id === id)?.groupId);
+        const isLeader = obj && obj.type === 'leader';
         const isLine = obj && (obj.type === 'line' || obj.type === 'arrow');
         const isHatch = obj && obj.type === 'hatch';
         const isDateStamp = obj && obj.type === 'date-stamp';
@@ -5144,7 +5533,52 @@
         const customList = Array.isArray(appState.customStamps) ? appState.customStamps : [];
 
         let detailBar = '';
-        if (isLine) {
+        if (isLeader) {
+          const pts = getLineEndpoints(obj);
+          const curLen = Math.round(Math.hypot(pts.x2 - pts.x1, pts.y2 - pts.y1));
+          const curDeg = Math.round(((Math.atan2(pts.y2 - pts.y1, pts.x2 - pts.x1) * 180) / Math.PI + 360) % 360);
+          const curStart = obj.startArrow || 'dot';
+          const curLineStyle = obj.lineStyle || 'solid';
+          detailBar = `
+            <div class="flex flex-wrap items-center gap-1.5 bg-slate-900 p-1.5 rounded-lg border border-sky-700/70">
+              <span class="text-sky-300 font-extrabold">🏷️ 引き出し線:</span>
+              <input id="sheet-leader-text-input" type="text" value="${escapeHtml(obj.text || '')}" oninput="updateSelectedObjProp('text', this.value)" placeholder="引き出しラベル文字" class="w-32 bg-slate-950 border border-slate-700 rounded px-2 py-0.5 font-bold text-white outline-none focus:border-sky-400" />
+              <div class="inline-flex items-center gap-1">
+                <span class="text-blue-300 font-bold text-[10px]">先端:</span>
+                <select onchange="updateSelectedObjProp('startArrow', this.value)" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 font-bold text-blue-200">
+                  <option value="dot" ${curStart === 'dot' ? 'selected' : ''}>・ 点</option>
+                  <option value="filled" ${curStart === 'filled' ? 'selected' : ''}>▶ 黒矢印</option>
+                  <option value="open" ${curStart === 'open' ? 'selected' : ''}>▷ 白矢印</option>
+                  <option value="normal" ${curStart === 'normal' ? 'selected' : ''}>＞ 矢印</option>
+                  <option value="circle" ${curStart === 'circle' ? 'selected' : ''}>● 丸</option>
+                  <option value="square" ${curStart === 'square' ? 'selected' : ''}>■ 四角</option>
+                  <option value="slash" ${curStart === 'slash' ? 'selected' : ''}>／ 斜線</option>
+                  <option value="tick" ${curStart === 'tick' ? 'selected' : ''}>｜ 縦線</option>
+                  <option value="none" ${curStart === 'none' ? 'selected' : ''}>なし</option>
+                </select>
+              </div>
+              <select onchange="updateSelectedObjProp('lineStyle', this.value)" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 font-bold">
+                <option value="solid" ${curLineStyle === 'solid' ? 'selected' : ''}>実線</option>
+                <option value="dashed" ${curLineStyle === 'dashed' ? 'selected' : ''}>破線</option>
+                <option value="dotted" ${curLineStyle === 'dotted' ? 'selected' : ''}>点線</option>
+                <option value="dashdot" ${curLineStyle === 'dashdot' ? 'selected' : ''}>一点鎖線</option>
+              </select>
+              <label class="inline-flex items-center gap-1 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 cursor-pointer">
+                <input type="checkbox" ${obj.bgWhite !== false ? 'checked' : ''} onchange="updateSelectedObjProp('bgWhite', this.checked)" />
+                <span>白背景</span>
+              </label>
+              <div class="inline-flex items-center gap-1 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-700">
+                <span class="text-[10px] text-slate-400">長:</span>
+                <input type="number" min="20" max="600" value="${curLen}" onchange="setLineFromAngleOrLength(getSelectedObject(), null, Number(this.value)); saveProjectToLocal(); renderSheetLayout();" class="w-11 bg-transparent font-mono font-bold text-amber-200 outline-none" />
+                <span class="text-[10px] text-slate-400">角:</span>
+                <input type="number" min="0" max="360" value="${curDeg}" onchange="setLineFromAngleOrLength(getSelectedObject(), Number(this.value), null); saveProjectToLocal(); renderSheetLayout();" class="w-10 bg-transparent font-mono font-bold text-amber-200 outline-none" />
+                <span class="text-[10px] text-slate-400">°</span>
+              </div>
+              <input type="color" value="${obj.color || '#dc2626'}" onchange="updateSelectedObjProp('color', this.value)" class="w-5 h-5 bg-transparent border-0"/>
+              <button onclick="deleteSelectedObject()" class="px-2 py-0.5 bg-rose-800 rounded font-bold cursor-pointer">🗑️削除</button>
+            </div>
+          `;
+        } else if (isLine) {
           const pts = getLineEndpoints(obj);
           const curLen = Math.round(Math.hypot(pts.x2 - pts.x1, pts.y2 - pts.y1));
           const curDeg = Math.round(((Math.atan2(pts.y2 - pts.y1, pts.x2 - pts.x1) * 180) / Math.PI + 360) % 360);
@@ -5207,10 +5641,10 @@
               <input type="text" value="${escapeHtml(obj.topText || '')}" onchange="updateSelectedObjProp('topText', this.value)" placeholder="上段文字" class="w-20 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5"/>
               <input type="text" value="${escapeHtml(obj.bottomText || '')}" onchange="updateSelectedObjProp('bottomText', this.value)" placeholder="下段文字" class="w-24 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5"/>
               <select onchange="updateSelectedObjProp('dateFormat', this.value)" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 font-bold">
-                <option value="dot" ${obj.dateFormat === 'dot' ? 'selected' : ''}>2026.11.22</option>
-                <option value="slash" ${obj.dateFormat === 'slash' ? 'selected' : ''}>2026/11/22</option>
-                <option value="wareki" ${obj.dateFormat === 'wareki' ? 'selected' : ''}>R8.11.22</option>
-                <option value="mdhm" ${obj.dateFormat === 'mdhm' ? 'selected' : ''}>11/22 21:00</option>
+                <option value="dot" ${obj.dateFormat === 'dot' ? 'selected' : ''}>2026.11.23</option>
+                <option value="slash" ${obj.dateFormat === 'slash' ? 'selected' : ''}>2026/11/23</option>
+                <option value="wareki" ${obj.dateFormat === 'wareki' ? 'selected' : ''}>R8.11.23</option>
+                <option value="mdhm" ${obj.dateFormat === 'mdhm' ? 'selected' : ''}>11/23 00:00</option>
               </select>
               <label class="inline-flex items-center gap-1 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 cursor-pointer">
                 <input type="checkbox" ${obj.showTime ? 'checked' : ''} onchange="updateSelectedObjProp('showTime', this.checked)" />
@@ -5245,14 +5679,14 @@
                   <button onclick="updateSelectedObjProp('type', 'zigzag')" class="px-2 py-0.5 cursor-pointer ${obj.type === 'zigzag' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300'}">💥 ギザ</button>
                 </div>
               ` : ''}
-              <select onchange="updateSelectedObjProp('lineStyle', this.value)" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 font-bold" title="外枠線の線種">
+              <select onchange="updateSelectedObjProp('lineStyle', this.value)" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 font-bold">
                 <option value="solid" ${curLineStyle === 'solid' ? 'selected' : ''}>枠線:実線</option>
                 ${!isCloudOrZigzag ? `<option value="double" ${curLineStyle === 'double' ? 'selected' : ''}>枠線:2重線</option>` : ''}
                 <option value="dashed" ${curLineStyle === 'dashed' ? 'selected' : ''}>枠線:破線</option>
                 <option value="dotted" ${curLineStyle === 'dotted' ? 'selected' : ''}>枠線:点線</option>
                 <option value="dashdot" ${curLineStyle === 'dashdot' ? 'selected' : ''}>枠線:一点鎖線</option>
               </select>
-              <label class="inline-flex items-center gap-1 bg-slate-800 px-2 py-0.5 rounded border border-slate-700 cursor-pointer font-bold text-amber-200" title="図形の内側を薄い色で塗りつぶします">
+              <label class="inline-flex items-center gap-1 bg-slate-800 px-2 py-0.5 rounded border border-slate-700 cursor-pointer font-bold text-amber-200">
                 <input type="checkbox" ${obj.fillTint ? 'checked' : ''} onchange="updateSelectedObjProp('fillTint', this.checked)" class="accent-amber-400" />
                 <span>🎨 薄色塗り</span>
               </label>
@@ -5270,16 +5704,16 @@
           const curBorderStyle = obj.lineStyle || 'solid';
           detailBar = `
             <div class="flex flex-wrap items-center gap-1.5 bg-slate-900 p-1.5 rounded-lg border border-slate-800">
-              <select onchange="updateSelectedObjProp('hatchPattern', this.value)" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 font-bold" title="ハッチング模様">
+              <select onchange="updateSelectedObjProp('hatchPattern', this.value)" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 font-bold">
                 ${HATCH_PATTERNS.map(hp => `<option value="${hp.id}" ${(obj.hatchPattern || 'diag45') === hp.id ? 'selected' : ''}>${hp.label}</option>`).join('')}
               </select>
-              <select onchange="updateSelectedObjProp('hatchLineStyle', this.value)" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 font-bold text-emerald-200" title="ハッチング中の線の線種">
+              <select onchange="updateSelectedObjProp('hatchLineStyle', this.value)" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 font-bold text-emerald-200">
                 <option value="solid" ${curHatchLineStyle === 'solid' ? 'selected' : ''}>中線:実線</option>
                 <option value="dashed" ${curHatchLineStyle === 'dashed' ? 'selected' : ''}>中線:破線</option>
                 <option value="dotted" ${curHatchLineStyle === 'dotted' ? 'selected' : ''}>中線:点線</option>
                 <option value="dashdot" ${curHatchLineStyle === 'dashdot' ? 'selected' : ''}>中線:一点鎖線</option>
               </select>
-              <select onchange="updateSelectedObjProp('lineStyle', this.value)" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 font-bold text-amber-200" title="ハッチング外枠の線種">
+              <select onchange="updateSelectedObjProp('lineStyle', this.value)" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 font-bold text-amber-200">
                 <option value="solid" ${curBorderStyle === 'solid' ? 'selected' : ''}>枠線:実線</option>
                 <option value="double" ${curBorderStyle === 'double' ? 'selected' : ''}>枠線:2重線</option>
                 <option value="dashed" ${curBorderStyle === 'dashed' ? 'selected' : ''}>枠線:破線</option>
@@ -5302,7 +5736,7 @@
           detailBar = `
             <div class="flex flex-wrap items-center gap-1.5 bg-slate-900 p-1.5 rounded-lg border border-slate-800">
               <button onclick="enterTextObjectEditMode('${obj.id}')" class="px-2 py-0.5 bg-amber-600 hover:bg-amber-500 rounded font-extrabold text-white cursor-pointer">✏️ 編集</button>
-              <select onchange="updateSelectedObjProp('boxStyle', this.value)" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 font-bold text-amber-200" title="移動文字の囲いスタイル">
+              <select onchange="updateSelectedObjProp('boxStyle', this.value)" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 font-bold text-amber-200">
                 <option value="none" ${curBs === 'none' ? 'selected' : ''}>囲い: なし</option>
                 <option value="card" ${curBs === 'card' ? 'selected' : ''}>① 白枠カード</option>
                 <option value="solid-border" ${curBs === 'solid-border' ? 'selected' : ''}>② カラー実線枠</option>
@@ -5339,7 +5773,7 @@
             <div class="flex flex-wrap items-center gap-1">
               <button onclick="addDateStampObject('round')" class="px-2 py-1 bg-rose-900/80 hover:bg-rose-800 border border-rose-700 rounded-lg font-bold cursor-pointer">💮 丸日時印</button>
               <button onclick="addDateStampObject('square')" class="px-2 py-1 bg-rose-900/80 hover:bg-rose-800 border border-rose-700 rounded-lg font-bold cursor-pointer">🗓️ 角日時印</button>
-              <button onclick="refreshAllDateStampsOnPage()" class="px-2 py-1 bg-emerald-900/80 hover:bg-emerald-800 border border-emerald-700 rounded-lg font-bold cursor-pointer" title="ページ内の日時スタンプを現在日時に一括更新">🔄 全日時更新</button>
+              <button onclick="refreshAllDateStampsOnPage()" class="px-2 py-1 bg-emerald-900/80 hover:bg-emerald-800 border border-emerald-700 rounded-lg font-bold cursor-pointer">🔄 全日時更新</button>
               <span class="text-slate-700">|</span>
               <div class="inline-flex items-center gap-1 bg-slate-900 border border-amber-600/70 rounded-lg px-1.5 py-0.5">
                 <span class="text-[10px] text-amber-300 font-bold">📐 角度:</span>
@@ -5349,6 +5783,7 @@
                   <option value="15" ${uiState.lineAngleSnap === '15' ? 'selected' : ''}>15°単位</option>
                 </select>
               </div>
+              <button onclick="addShapeObject('leader')" class="px-2 py-1 bg-sky-700 hover:bg-sky-600 border border-sky-500 rounded-lg font-extrabold text-white cursor-pointer">🏷️ 引き出し線</button>
               <button onclick="addShapeObject('line')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-bold cursor-pointer">📏 直線</button>
               <button onclick="addShapeObject('arrow')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-bold cursor-pointer">➡️ 矢印</button>
               <button onclick="addShapeObject('circle')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-bold cursor-pointer">⭕ 正円</button>
@@ -5375,7 +5810,7 @@
               ${customList.map((st, idx) => `
                 <div class="inline-flex items-center bg-slate-800 border border-slate-600 rounded-lg overflow-hidden">
                   <button onclick="placeCustomStamp('${escapeHtml(st)}')" class="px-2 py-0.5 hover:bg-slate-700 font-extrabold text-white cursor-pointer">${escapeHtml(st)}</button>
-                  <button onclick="removeCustomStamp(${idx})" class="px-1 py-0.5 text-[9px] text-slate-400 hover:text-rose-400 border-l border-slate-700 cursor-pointer" title="削除">×</button>
+                  <button onclick="removeCustomStamp(${idx})" class="px-1 py-0.5 text-[9px] text-slate-400 hover:text-rose-400 border-l border-slate-700 cursor-pointer">×</button>
                 </div>
               `).join('')}
               <div class="inline-flex items-center gap-1 ml-auto">
@@ -5402,7 +5837,8 @@
         box.innerHTML = `
           <div class="space-y-1.5 text-xs">
             <div class="flex flex-wrap items-center gap-1.5">
-              <button onclick="openTemplateModal('schedule')" class="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-extrabold shadow-xs cursor-pointer">🗓️ マンスリー / 週間 / 日記 / 工程表テンプレ</button>
+              <button onclick="openTemplateModal('schedule')" class="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-extrabold shadow-xs cursor-pointer">🗓️ 予定・工程表テンプレ</button>
+              <button onclick="openMamezuExchangeModal()" class="px-2.5 py-1 rounded-lg bg-sky-700 hover:bg-sky-600 text-white font-extrabold shadow-xs cursor-pointer">🔄 写真台帳と豆図やりとり</button>
               <span class="text-slate-400 font-bold text-[10px]">用紙規格:</span>
               ${Object.values(PAPER_STANDARDS).map(st => `
                 <button onclick="setPaperSize('${st.id}')" class="px-2 py-1 rounded-lg border font-bold cursor-pointer ${p.paperSize === st.id ? 'bg-emerald-700 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-300'}">${st.label}</button>
@@ -5529,7 +5965,7 @@
 
       const cur = getCurrentPage();
       const page = createDefaultPage(nb.pages.length + 1, nb.themeKey);
-      page.paperSize = cur.paperSize;
+      page.paperSize = cur.paperSize === 'mamezu' ? 'a5' : cur.paperSize;
       page.orientation = 'single-h';
       page.bgStyle = 'plain-white';
       page.composeMode = 'table-only';
@@ -5613,7 +6049,7 @@
 
       const cur = getCurrentPage();
       const page = createDefaultPage(nb.pages.length + 1, nb.themeKey);
-      page.paperSize = cur.paperSize;
+      page.paperSize = cur.paperSize === 'mamezu' ? 'yaecho' : cur.paperSize;
       page.bgStyle = noteBgMap[noteStyle] || 'ruled';
       page.titlePreset = 'diary';
       page.showTitle = true;
@@ -5778,7 +6214,7 @@
 
       const cur = getCurrentPage();
       const page = createDefaultPage(nb.pages.length + 1, nb.themeKey);
-      page.paperSize = cur.paperSize;
+      page.paperSize = cur.paperSize === 'mamezu' ? 'a5' : cur.paperSize;
       page.orientation = 'single-v';
       page.bgStyle = bgMap[noteStyle] || 'ruled';
       page.composeMode = 'memo-only';
@@ -5813,7 +6249,7 @@
       const dStr = `${baseD.getMonth() + 1}/${baseD.getDate()}`;
       const cur = getCurrentPage();
       const page = createDefaultPage(nb.pages.length + 1, nb.themeKey);
-      page.paperSize = cur.paperSize;
+      page.paperSize = cur.paperSize === 'mamezu' ? 'yaecho' : cur.paperSize;
       page.orientation = 'spread-v';
       page.bgStyle = 'grid-white';
       page.composeMode = 'table-only';
@@ -5871,7 +6307,7 @@
       const isBlank = !!tplBuilderState.isBlank;
       const cur = getCurrentPage();
       const page = createDefaultPage(nb.pages.length + 1, nb.themeKey);
-      page.paperSize = cur.paperSize;
+      page.paperSize = cur.paperSize === 'mamezu' ? 'yaecho' : cur.paperSize;
       page.orientation = 'spread-v';
       page.bgStyle = 'plain-white';
       page.composeMode = 'table-only';
@@ -5932,7 +6368,7 @@
       const isBlank = !!tplBuilderState.isBlank;
       const cur = getCurrentPage();
       const page = createDefaultPage(nb.pages.length + 1, nb.themeKey);
-      page.paperSize = cur.paperSize;
+      page.paperSize = cur.paperSize === 'mamezu' ? 'yaecho' : cur.paperSize;
       page.orientation = 'spread-v';
       page.bgStyle = 'yaecho-green';
       page.composeMode = 'table-only';
@@ -6212,7 +6648,7 @@
       renderTemplateModalBody();
     }
 
-    // ==================== 高解像度 2x Canvas PNG合成（DOM実測座標連動でズレゼロ） ====================
+    // ==================== 高解像度 2x Canvas PNG合成 ====================
     function wrapCanvasTextLines(ctx, textStr, maxInnerWidth) {
       const rawLines = String(textStr || '').split('\n');
       if (!maxInnerWidth || maxInnerWidth <= 12) return rawLines;
@@ -6445,7 +6881,7 @@
         ctx.fillStyle = '#334155';
         ctx.font = 'bold 9px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(`✂️ 切り取りトンボ（${dim.mmW}×${dim.mmH}mm / 左端のりしろ5mm）`, totalW / 2, 13);
+        ctx.fillText(`✂️ 切り取りトンボ（${dim.mmW}×${dim.mmH}mm）`, totalW / 2, 13);
         ctx.textAlign = 'left';
       }
 
@@ -6497,7 +6933,7 @@
         ctx.beginPath(); ctx.moveTo(0, dim.pxH / 2); ctx.lineTo(dim.pxW, dim.pxH / 2); ctx.stroke();
       }
 
-      const sheetPad = 20;
+      const sheetPad = p.paperSize === 'mamezu' ? 12 : 20;
       let contentTop = sheetPad;
       if (p.showTitle || p.meta.showDate || p.meta.showWeather || p.meta.showStaff) {
         const hdrEl = isCurrentActivePage ? document.getElementById('sheet-header-row') : null;
@@ -6743,7 +7179,31 @@
           ctx.restore();
         };
 
-        if (obj.type === 'line' || obj.type === 'arrow') {
+        if (obj.type === 'leader') {
+          const g = buildLeaderGeometry(obj);
+          const ang = Math.atan2(g.y2 - g.y1, g.x2 - g.x1);
+          ctx.save();
+          ctx.strokeStyle = col;
+          ctx.lineWidth = obj.strokeWidth || 2.2;
+          applyCanvasLineDash(obj.lineStyle, obj.strokeWidth || 2.2);
+          ctx.beginPath();
+          ctx.moveTo(g.x1, g.y1);
+          ctx.lineTo(g.x2, g.y2);
+          ctx.lineTo(g.x3, g.y2);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          drawCanvasMarker(obj.startArrow || 'dot', g.x1, g.y1, ang + Math.PI);
+          if (obj.bgWhite !== false) {
+            const bgX = g.dir > 0 ? g.x2 + 1 : g.x3;
+            ctx.fillStyle = 'rgba(255,255,255,0.92)';
+            ctx.fillRect(bgX, g.y2 - g.fSize - 6, g.shelfW - 2, g.fSize + 4);
+          }
+          ctx.fillStyle = col;
+          ctx.font = `bold ${g.fSize}px sans-serif`;
+          ctx.textAlign = g.dir > 0 ? 'left' : 'right';
+          ctx.fillText(g.txt, g.dir > 0 ? (g.x2 + 4) : (g.x2 - 4), g.y2 - 5);
+          ctx.restore();
+        } else if (obj.type === 'line' || obj.type === 'arrow') {
           const { x1, y1, x2, y2 } = getLineEndpoints(obj);
           const ang = Math.atan2(y2 - y1, x2 - x1);
           ctx.strokeStyle = col;
@@ -7669,7 +8129,7 @@
       event.target.value = '';
     }
 
-    // ==================== 豆図・写真直接注釈エディタ（写真台帳システム完全同等・11種雛形・10ツール・90°/15°スナップ） ====================
+    // ==================== 豆図・写真直接注釈エディタ（写真台帳システム完全同等） ====================
     const fnMzState = {
       mode: 'mamezu',
       targetObjId: null,
@@ -8474,7 +8934,7 @@
         showToast('図面メモのピン一覧を表として取り込みました');
       },
       insertImage(src, title = '図面メモ画像') {
-        insertExternalImageToSheet(src, title);
+        insertExternalImageToSheet(src, title, false);
       }
     };
 
